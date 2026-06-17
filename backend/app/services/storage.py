@@ -36,4 +36,8 @@ class StorageService:
         """Batch sub-split chunk CSV file path."""
         return self.get_job_output_dir(job_id) / f"chunk_{chunk_index}.csv"
 
+    def get_validation_breakdown_path(self, job_id: str) -> Path:
+        """Validation breakdown JSON file path."""
+        return self.get_job_output_dir(job_id) / "validation_breakdown.json"
+
 storage_service = StorageService()

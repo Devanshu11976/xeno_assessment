@@ -57,6 +57,7 @@ async def _process_async(job_id: str, file_path: str, country_code: str) -> None
         job.invalid_records = result.get("invalid_records", 0)
         job.clean_file_path = result.get("clean_file_path")
         job.error_report_path = result.get("error_report_path")
+        job.validation_breakdown = result.get("validation_breakdown")
         await session.flush()
 
     # Step 4: Generate AI report

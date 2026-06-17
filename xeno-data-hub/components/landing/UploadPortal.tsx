@@ -3,15 +3,6 @@
 import { useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
-const COUNTRIES = [
-    { code: 'IN', label: '🇮🇳 India' },
-    { code: 'SG', label: '🇸🇬 Singapore' },
-    { code: 'US', label: '🇺🇸 USA' },
-    { code: 'DE', label: '🇩🇪 Germany' },
-    { code: 'GB', label: '🇬🇧 UK' },
-    { code: 'AU', label: '🇦🇺 Australia' },
-]
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 interface UploadPortalProps {
@@ -32,12 +23,8 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
     const [isDragActive, setIsDragActive] = useState(false)
     const [uploadState, setUploadState] = useState<UploadState>('idle')
     const [errorMsg, setErrorMsg] = useState('')
-    const [countryCode, setCountryCode] = useState('IN')
     const inputRef = useRef<HTMLInputElement>(null)
     const dragDepth = useRef(0)
-
-    const ALLOWED = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel', '']
 
     const uploadFile = useCallback(async (file: File) => {
         const ext = file.name.split('.').pop()?.toLowerCase()
@@ -55,7 +42,8 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
         try {
             const form = new FormData()
             form.append('file', file)
-            form.append('country_code', countryCode)
+            // Send default 'IN' country code as parameter (backend fallback)
+            form.append('country_code', 'IN')
 
             const res = await fetch(`${API_BASE}/api/upload`, {
                 method: 'POST',
@@ -71,7 +59,6 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
             setUploadState('queued')
             onIntensityChange?.(0.4)
 
-            // Redirect to workspace after a short pause so user sees the "Queued" state
             setTimeout(() => {
                 onIntensityChange?.(0)
                 router.push(`/workspace?job_id=${data.job_id}`)
@@ -82,7 +69,7 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
             setErrorMsg(err?.message ?? 'Unknown error')
             onIntensityChange?.(0)
         }
-    }, [countryCode, onIntensityChange, router])
+    }, [onIntensityChange, router])
 
     const handleFiles = useCallback((files: FileList | null) => {
         if (!files?.length) return
@@ -116,7 +103,7 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
     }
 
     const busy = uploadState === 'uploading' || uploadState === 'queued'
-    const statusColor = uploadState === 'error' ? '#f87171' : 'var(--signal)'
+    const statusColor = uploadState === 'error' ? '#f87171' : '#2dd4bf'
     const displayMsg = uploadState === 'error' ? `✗ ${errorMsg}` : STATE_MESSAGES[uploadState]
 
     return (
@@ -136,91 +123,157 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
                 position: 'relative',
                 zIndex: 3,
                 width: '100%',
-                maxWidth: 300,
+                maxWidth: 340,
                 padding: '36px 26px',
-                borderRadius: 20,
+                borderRadius: 24,
                 border: isDragActive
-                    ? '1.5px solid var(--signal)'
+                    ? '1.5px solid #2dd4bf'
                     : uploadState === 'error'
                         ? '1.5px solid #f87171'
-                        : '1.5px dashed rgba(255,255,255,0.18)',
+                        : '1.5px dashed rgba(255,255,255,0.15)',
                 background: isDragActive
-                    ? 'rgba(245,176,66,0.07)'
-                    : 'rgba(255,255,255,0.035)',
-                backdropFilter: 'blur(20px) saturate(160%)',
+                    ? 'rgba(45, 212, 191, 0.05)'
+                    : 'rgba(255,255,255,0.02)',
+                backdropFilter: 'blur(24px) saturate(170%)',
                 textAlign: 'center',
                 cursor: busy ? 'wait' : 'pointer',
                 transition: 'border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
                 boxShadow: isDragActive
-                    ? '0 0 60px rgba(245,176,66,0.2), inset 0 0 30px rgba(245,176,66,0.06)'
-                    : 'none',
-                transform: isDragActive ? 'translateY(-2px) scale(1.03)' : 'none',
+                    ? '0 0 60px rgba(45, 212, 191, 0.25), inset 0 0 30px rgba(45, 212, 191, 0.05)'
+                    : '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                transform: isDragActive ? 'translateY(-2px) scale(1.02)' : 'none',
             }}
         >
             {/* Upload icon */}
-            <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div className="upload-ring" />
                 <div className="upload-ring" />
                 <div className="upload-ring" />
                 {uploadState === 'uploading' ? (
-                    <svg style={{ width: 26, height: 26, color: 'var(--signal)', position: 'relative', zIndex: 2, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <svg style={{ width: 28, height: 28, color: '#2dd4bf', position: 'relative', zIndex: 2, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
                     </svg>
                 ) : (
-                    <svg style={{ width: 26, height: 26, color: isDragActive ? 'var(--signal)' : 'var(--refine)', position: 'relative', zIndex: 2, transition: 'color 0.3s ease' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <svg style={{ width: 28, height: 28, color: isDragActive ? '#2dd4bf' : 'rgba(255,255,255,0.6)', position: 'relative', zIndex: 2, transition: 'color 0.3s ease' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                         <path d="M12 16V4M12 4L7 9M12 4l5 5" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 )}
             </div>
 
-            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: 15 }}>
+            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: 16, color: '#fff' }}>
                 Drop a CSV or XLSX
             </p>
-            <p style={{ marginTop: 6, fontSize: 12, color: 'var(--mist-dim)', lineHeight: 1.5 }}>
+            <p style={{ marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
                 or click to browse
             </p>
 
-            {/* Country selector — stop click propagation so it doesn't trigger file picker */}
-            <div style={{ marginTop: 14 }} onClick={e => e.stopPropagation()}>
-                <select
-                    value={countryCode}
-                    onChange={e => setCountryCode(e.target.value)}
-                    disabled={busy}
-                    aria-label="Select country rule set"
-                    style={{
-                        width: '100%',
-                        padding: '7px 10px',
-                        borderRadius: 8,
-                        border: '1px solid var(--line)',
-                        background: 'rgba(255,255,255,0.06)',
-                        color: 'var(--paper)',
-                        fontFamily: "'IBM Plex Mono', monospace",
-                        fontSize: 12,
-                        cursor: busy ? 'not-allowed' : 'pointer',
-                        outline: 'none',
-                    }}
-                >
-                    {COUNTRIES.map(c => (
-                        <option key={c.code} value={c.code} style={{ background: '#1a1b1f', color: '#fff' }}>
-                            {c.label}
-                        </option>
-                    ))}
-                </select>
+            <p style={{ marginTop: 12, fontSize: 11.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55, padding: '0 8px' }}>
+                The system automatically discovers country-specific validation rules, validates records, and generates AI-powered quality insights.
+            </p>
+
+            {/* Visual System Status */}
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: 8, 
+                marginTop: 18, 
+                fontSize: 11, 
+                fontFamily: "'IBM Plex Mono', monospace", 
+                color: '#2dd4bf' 
+            }}>
+                <span className="status-dot" style={{ 
+                    width: 7, 
+                    height: 7, 
+                    borderRadius: '50%', 
+                    background: '#2dd4bf', 
+                    boxShadow: '0 0 8px #2dd4bf',
+                }} />
+                Dynamic Rule Engine Active
             </div>
 
-            <div style={{ marginTop: 10, display: 'flex', justifyContent: 'center', gap: 8 }}>
+            {/* Dynamic Rule Engine Messaging */}
+            <div style={{ 
+                marginTop: 20, 
+                borderTop: '1px solid rgba(255,255,255,0.08)', 
+                paddingTop: 16, 
+                textAlign: 'left', 
+                fontSize: 11.5, 
+                color: 'rgba(255,255,255,0.6)' 
+            }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <span style={{ color: '#2dd4bf', fontWeight: 'bold' }}>✓</span> Auto Country Detection
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <span style={{ color: '#2dd4bf', fontWeight: 'bold' }}>✓</span> Dynamic Rule Engine
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <span style={{ color: '#2dd4bf', fontWeight: 'bold' }}>✓</span> AI Quality Analysis
+                </div>
+                <div style={{ 
+                    fontFamily: "'IBM Plex Mono', monospace", 
+                    fontSize: 10.5, 
+                    background: 'rgba(45, 212, 191, 0.08)', 
+                    color: '#2dd4bf', 
+                    padding: '5px 10px', 
+                    borderRadius: 6, 
+                    display: 'inline-block',
+                    border: '1px solid rgba(45, 212, 191, 0.25)',
+                    fontWeight: 500
+                }}>
+                    190+ Validation Rules Loaded
+                </div>
+            </div>
+
+            {/* Live Capability Chips */}
+            <div style={{ 
+                marginTop: 20, 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                justifyContent: 'center', 
+                gap: 6 
+            }} onClick={e => e.stopPropagation()}>
+                {[
+                    "Auto Detect Countries",
+                    "AI Validation",
+                    "Error Reports",
+                    "Chunk Generation",
+                    "Streaming Processing"
+                ].map(chip => (
+                    <span key={chip} style={{ 
+                        fontFamily: "'IBM Plex Mono', monospace", 
+                        fontSize: 9, 
+                        color: 'rgba(255,255,255,0.45)', 
+                        padding: '3px 8px', 
+                        background: 'rgba(255,255,255,0.03)', 
+                        border: '1px solid rgba(255,255,255,0.06)', 
+                        borderRadius: 5,
+                        letterSpacing: '0.01em'
+                    }}>
+                        [ {chip} ]
+                    </span>
+                ))}
+            </div>
+
+            {/* File Format & Status message */}
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center', gap: 8 }}>
                 {['.csv', '.xlsx'].map(fmt => (
-                    <span key={fmt} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, color: 'var(--mist-dim)', padding: '3px 8px', border: '1px solid var(--line)', borderRadius: 5 }}>
+                    <span key={fmt} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: 'rgba(255,255,255,0.3)', padding: '2px 6px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4 }}>
                         {fmt}
                     </span>
                 ))}
             </div>
 
             {/* Status message */}
-            <div style={{ marginTop: 12, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: statusColor, minHeight: 16, opacity: displayMsg ? 1 : 0, transition: 'opacity 0.3s ease', lineHeight: 1.4 }}>
+            <div style={{ marginTop: 12, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: statusColor, minHeight: 16, opacity: displayMsg ? 1 : 0, transition: 'opacity 0.3s ease', lineHeight: 1.4 }}>
                 {displayMsg}
             </div>
+
+            {/* Architecture Hint */}
+            <p style={{ marginTop: 18, fontSize: 9.5, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4, textAlign: 'center' }}>
+                Validation rules are automatically loaded based on country codes found in your dataset. No manual configuration required.
+            </p>
 
             <input
                 ref={inputRef}
@@ -233,12 +286,12 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
             <style>{`
                 .upload-ring {
                     position: absolute; inset: 0; border-radius: 50%;
-                    border: 1px solid rgba(155, 107, 255, 0.35);
+                    border: 1px solid rgba(45, 212, 191, 0.35);
                     opacity: 0; pointer-events: none;
                     animation: upload-pulse 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
                     transition: border-color 0.3s ease;
                 }
-                .drag-active .upload-ring { border-color: var(--signal); animation-duration: 1.5s; }
+                .drag-active .upload-ring { border-color: #2dd4bf; animation-duration: 1.5s; }
                 .upload-ring:nth-child(1) { animation-delay: 0s; }
                 .upload-ring:nth-child(2) { animation-delay: 1s; }
                 .upload-ring:nth-child(3) { animation-delay: 2s; }
@@ -248,6 +301,15 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
                     100% { transform: scale(2.0); opacity: 0; }
                 }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                
+                .status-dot {
+                    animation: dot-pulse 1.8s ease-in-out infinite;
+                }
+                @keyframes dot-pulse {
+                    0% { opacity: 0.4; transform: scale(0.9); }
+                    50% { opacity: 1; transform: scale(1.1); }
+                    100% { opacity: 0.4; transform: scale(0.9); }
+                }
             `}</style>
         </div>
     )

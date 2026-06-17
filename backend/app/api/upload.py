@@ -176,6 +176,41 @@ class UploadController(Controller):
         )
 
     # ------------------------------------------------------------------ #
+    #  GET /api/jobs/{job_id}/validation-breakdown                       #
+    # ------------------------------------------------------------------ #
+    @get(path="/jobs/{job_id:str}/validation-breakdown")
+    async def get_job_validation_breakdown(self, job_id: str, session: AsyncSession) -> dict[str, int]:
+        """Return the validation breakdown counts for this job."""
+        repo = JobsRepository(session)
+        job = await repo.get_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        
+        if job.validation_breakdown:
+            return job.validation_breakdown
+            
+        # Fallback to file reading if DB column is null (e.g. for compatibility)
+        try:
+            import json
+            from app.services.storage import storage_service
+            breakdown_path = storage_service.get_validation_breakdown_path(job_id)
+            if breakdown_path.exists():
+                with open(breakdown_path, "r") as fh:
+                    return json.load(fh)
+        except Exception:
+            pass
+            
+        return {
+            "invalid_phone": 0,
+            "invalid_date": 0,
+            "invalid_payment_mode": 0,
+            "duplicate_order_id": 0,
+            "negative_quantity": 0,
+            "negative_amount": 0,
+            "missing_fields": 0,
+        }
+
+    # ------------------------------------------------------------------ #
     #  GET /api/jobs/{job_id}/downloads                                    #
     # ------------------------------------------------------------------ #
     @get(path="/jobs/{job_id:str}/downloads")

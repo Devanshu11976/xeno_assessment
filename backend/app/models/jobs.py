@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from typing import TYPE_CHECKING, Optional
-from sqlalchemy import String, Integer, ForeignKey
+from sqlalchemy import String, Integer, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.database import Base
@@ -56,6 +56,7 @@ class ProcessingJobs(Base):
     invalid_records: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     clean_file_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     error_report_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    validation_breakdown: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     uploaded_file: Mapped[UploadedFiles] = relationship(
