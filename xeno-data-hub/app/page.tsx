@@ -66,7 +66,7 @@ const STACK_PILLS = [
   'Pandera',
   'PostgreSQL',
   'Redis',
-  'Gemini API',
+  'Groq API',
 ]
 
 function ProblemSection() {

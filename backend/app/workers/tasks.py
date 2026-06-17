@@ -1,40 +1,40 @@
+import time
 import logging
 import asyncio
 from redis import Redis
-from rq import Queue, Worker
+from rq import Queue, Worker, Retry
 from app.config.settings import settings
 
 logger = logging.getLogger("xeno.worker")
 
+# Retry up to 3 times with exponential back-off: 60s, 120s, 240s
+RETRY_POLICY = Retry(max=3, interval=[60, 120, 240])
+
 
 def process_dataset_task(job_id: str, file_path: str, country_code: str) -> None:
-    """Asynchronous worker entry point.
-
-    Triggered by Redis RQ. Orchestrates data validation, DB updates,
-    outputs creation, and AI analysis.
-    """
+    """RQ entry point — orchestrates validation, DB updates, and AI report."""
     logger.info(f"Starting processing for job {job_id}")
     try:
         asyncio.run(_process_async(job_id, file_path, country_code))
         logger.info(f"Finished processing job {job_id}")
     except Exception as exc:
         logger.exception(f"Job {job_id} failed: {exc}")
-        # Mark as failed in the database
         try:
             asyncio.run(_mark_failed(job_id, str(exc)))
         except Exception:
             logger.exception(f"Could not mark job {job_id} as failed in DB")
+        # Re-raise so RQ can apply the retry policy
+        raise
 
 
 async def _process_async(job_id: str, file_path: str, country_code: str) -> None:
-    """The actual async processing pipeline."""
     from app.config.db import session_scope
     from app.repositories.jobs import JobsRepository
     from app.services.validation import validation_service
     from app.services.ai import ai_service
     from app.models.ai import AIReports
 
-    # Step 1: Mark status = processing
+    # ── Step 1: Mark processing ───────────────────────────────────────────
     async with session_scope() as session:
         repo = JobsRepository(session)
         job = await repo.get_by_id(job_id)
@@ -43,35 +43,42 @@ async def _process_async(job_id: str, file_path: str, country_code: str) -> None
         job.status = "processing"
         await session.flush()
 
-    # Step 2: Run validation pipeline
+    # ── Step 2: Run validation (timed) ───────────────────────────────────
+    t_start = time.monotonic()
     result = await validation_service.process_dataset(job_id, file_path, country_code)
+    t_end = time.monotonic()
+    processing_time_ms = int((t_end - t_start) * 1000)
 
-    # Step 3: Update DB with validation results
+    # ── Step 3: Persist metrics ───────────────────────────────────────────
     async with session_scope() as session:
         repo = JobsRepository(session)
         job = await repo.get_by_id(job_id)
         if not job:
             raise ValueError(f"Job {job_id} not found after validation")
-        job.total_records = result.get("total_records", 0)
-        job.valid_records = result.get("valid_records", 0)
-        job.invalid_records = result.get("invalid_records", 0)
-        job.clean_file_path = result.get("clean_file_path")
-        job.error_report_path = result.get("error_report_path")
+        job.total_records        = result.get("total_records", 0)
+        job.valid_records        = result.get("valid_records", 0)
+        job.invalid_records      = result.get("invalid_records", 0)
+        job.clean_file_path      = result.get("clean_file_path")
+        job.error_report_path    = result.get("error_report_path")
         job.validation_breakdown = result.get("validation_breakdown")
+        job.processing_time_ms   = processing_time_ms
         await session.flush()
 
-    # Step 4: Generate AI report
-    error_logs = result.get("error_logs", [])
-    job_metrics = {
-        "job_id": job_id,
-        "country_code": country_code,
-        "total_records": result.get("total_records", 0),
-        "valid_records": result.get("valid_records", 0),
-        "invalid_records": result.get("invalid_records", 0),
-    }
-    ai_report_data = await ai_service.generate_quality_report(job_metrics, error_logs)
+    # ── Step 4: AI report ────────────────────────────────────────────────
+    ai_report_data = await ai_service.generate_quality_report(
+        {
+            "job_id": job_id,
+            "country_code": country_code,
+            "total_records": result.get("total_records", 0),
+            "valid_records": result.get("valid_records", 0),
+            "invalid_records": result.get("invalid_records", 0),
+            "country_stats": result.get("country_stats", {}),
+            "validation_breakdown": result.get("validation_breakdown", {}),
+        },
+        result.get("error_logs", []),
+    )
 
-    # Step 5: Save AI report to database
+    # ── Step 5: Save AI report ────────────────────────────────────────────
     async with session_scope() as session:
         repo = JobsRepository(session)
         report = AIReports(
@@ -84,7 +91,7 @@ async def _process_async(job_id: str, file_path: str, country_code: str) -> None
         )
         await repo.save_ai_report(report)
 
-    # Step 6: Mark status = completed
+    # ── Step 6: Mark completed ────────────────────────────────────────────
     async with session_scope() as session:
         repo = JobsRepository(session)
         job = await repo.get_by_id(job_id)
@@ -94,10 +101,8 @@ async def _process_async(job_id: str, file_path: str, country_code: str) -> None
 
 
 async def _mark_failed(job_id: str, error_msg: str) -> None:
-    """Mark a job as failed in the database."""
     from app.config.db import session_scope
     from app.repositories.jobs import JobsRepository
-
     async with session_scope() as session:
         repo = JobsRepository(session)
         job = await repo.get_by_id(job_id)
@@ -106,12 +111,7 @@ async def _mark_failed(job_id: str, error_msg: str) -> None:
             await session.flush()
 
 
-# Hook for launching the worker process container
 if __name__ == "__main__":
     redis_conn = Redis.from_url(settings.REDIS_URL)
-    # Poll 'default' queue for incoming files validation jobs
-    queue_name = "default"
-
-    logger.info(f"Initializing RQ Worker on queue: {queue_name}")
-    worker = Worker([Queue(queue_name, connection=redis_conn)], connection=redis_conn)
+    worker = Worker([Queue("default", connection=redis_conn)], connection=redis_conn)
     worker.work(with_scheduler=True)

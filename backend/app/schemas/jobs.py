@@ -4,19 +4,30 @@ import msgspec
 
 
 class UploadResponse(msgspec.Struct):
-    """Returned immediately following file upload receipt."""
     job_id: str
     status: str
 
 
 class JobStatusResponse(msgspec.Struct):
-    """Returned by heartbeat progress endpoints."""
     job_id: str
     status: str
 
 
+class CountryStatEntry(msgspec.Struct):
+    """Per-country record breakdown."""
+    total: int
+    valid: int
+    invalid: int
+
+
+class ChunkInfo(msgspec.Struct):
+    """Metadata for a single output chunk."""
+    url: str
+    record_count: int
+    file_size_bytes: int
+
+
 class JobDetailsResponse(msgspec.Struct):
-    """Contains detailed record counters and completion data."""
     job_id: str
     uploaded_file_id: uuid.UUID
     status: str
@@ -25,18 +36,25 @@ class JobDetailsResponse(msgspec.Struct):
     invalid_records: Optional[int]
     clean_file_path: Optional[str]
     error_report_path: Optional[str]
+    processing_time_ms: Optional[int]
+    # Per-country breakdown from validation_breakdown["country_stats"]
+    country_stats: dict[str, CountryStatEntry]
+    # Error type distribution from validation_breakdown
+    validation_breakdown: dict[str, int]
 
 
 class DownloadLinksResponse(msgspec.Struct):
-    """Contains download links for processed output files."""
     job_id: str
     clean_transactions_url: Optional[str]
+    clean_record_count: Optional[int]
+    clean_file_size_bytes: Optional[int]
     error_report_url: Optional[str]
-    chunks_urls: list[str]
+    error_record_count: Optional[int]
+    error_file_size_bytes: Optional[int]
+    chunks: list[ChunkInfo]
 
 
 class AIReportResponse(msgspec.Struct):
-    """Matches data saved by Groq worker analytics."""
     quality_score: float
     common_errors: list[dict]
     country_analysis: dict
@@ -45,7 +63,6 @@ class AIReportResponse(msgspec.Struct):
 
 
 class JobListItem(msgspec.Struct):
-    """Lightweight summary used in the jobs list endpoint."""
     job_id: str
     status: str
     total_records: Optional[int]

@@ -42,7 +42,10 @@ export default function UploadPortal({ onIntensityChange }: UploadPortalProps) {
         try {
             const form = new FormData()
             form.append('file', file)
-            form.append('country_code', 'IN')
+            // Send AUTO so the backend infers country from the dataset's country column.
+            // The validation service uses the fallback rule only when no per-row country
+            // can be resolved, so no hardcoded country is needed here.
+            form.append('country_code', 'AUTO')
 
             const res = await fetch(`${API_BASE}/api/upload`, {
                 method: 'POST',

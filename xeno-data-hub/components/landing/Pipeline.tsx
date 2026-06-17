@@ -67,7 +67,7 @@ const STAGES = [
     {
         num: '05',
         title: 'Analyze',
-        desc: 'Gemini reviews the dataset as a whole and writes a plain-language quality report — patterns and root causes, not just a list of broken rows.',
+        desc: 'Groq reviews the dataset as a whole and writes a plain-language quality report — patterns and root causes, not just a list of broken rows.',
         color: 'var(--signal)',
         visual: (
             <svg viewBox="0 0 100 60" fill="none" style={{ width: '100%', height: '100%' }}>

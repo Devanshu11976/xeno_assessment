@@ -57,6 +57,7 @@ class ProcessingJobs(Base):
     clean_file_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     error_report_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     validation_breakdown: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    processing_time_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Relationships
     uploaded_file: Mapped[UploadedFiles] = relationship(
