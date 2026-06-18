@@ -1,3 +1,9 @@
+databases:
+  - name: xeno-db
+    databaseName: xeno
+    user: xeno_user
+    plan: free
+
 services:
   - type: web
     name: xeno-api
@@ -12,15 +18,25 @@ services:
       - key: DEBUG
         value: false
       - key: DB_USER
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: password
       - key: DB_HOST
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: host
       - key: DB_PORT
-        value: "5432"
+        fromDatabase:
+          name: xeno-db
+          property: port
       - key: DB_NAME
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: database
       - key: REDIS_URL
         sync: false
       - key: GROQ_API_KEY
@@ -43,15 +59,25 @@ services:
       - key: ENV
         value: production
       - key: DB_USER
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: password
       - key: DB_HOST
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: host
       - key: DB_PORT
-        value: "5432"
+        fromDatabase:
+          name: xeno-db
+          property: port
       - key: DB_NAME
-        sync: false
+        fromDatabase:
+          name: xeno-db
+          property: database
       - key: REDIS_URL
         sync: false
       - key: GROQ_API_KEY
