@@ -1,0 +1,14 @@
+# Railway configuration for Xeno backend services
+# This file configures how Railway builds and deploys the application
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+healthcheckPath = "/api/docs"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Environment variables that will be set automatically by Railway
+# RAILWAY_SERVICE_NAME will be "web" for the API service and "worker" for the worker service

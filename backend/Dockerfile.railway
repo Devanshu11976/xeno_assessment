@@ -1,4 +1,4 @@
-# Build stage
+# Railway-specific Dockerfile that supports both API and worker services
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
@@ -26,12 +26,11 @@ ENV PATH=/root/.local/bin:$PATH
 
 COPY . .
 
-# Make startup scripts executable
-RUN chmod +x start_worker.py start_railway.py 2>/dev/null || true
+# Make startup script executable
+RUN chmod +x start_railway.py
 
-# Expose Litestar default port
+# Expose Litestar default port (only used by API service)
 EXPOSE 8000
 
-# Default: Run database migrations and then start the API
-# Can be overridden for Railway worker service using CMD or start command
-CMD sh -c "alembic upgrade head && python main.py"
+# Use Railway startup script that handles both API and worker modes
+CMD ["python", "start_railway.py"]
