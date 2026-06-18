@@ -13,11 +13,11 @@ class Settings:
 
     # Database — individual components (avoids @ in password breaking URL parsing)
     # No hardcoded defaults for credentials; must be supplied via environment
-    db_user: str = field(default_factory=lambda: os.getenv("DB_USER", "postgres"))
+    db_user: str = field(default_factory=lambda: os.getenv("DB_USER", "postgre"))
     db_password: str = field(default_factory=lambda: os.getenv("DB_PASSWORD", ""))
     db_host: str = field(default_factory=lambda: os.getenv("DB_HOST", "localhost"))
     db_port: int = field(default_factory=lambda: int(os.getenv("DB_PORT", "5432")))
-    db_name: str = field(default_factory=lambda: os.getenv("DB_NAME", "xeno"))
+    db_name: str = field(default_factory=lambda: os.getenv("DB_NAME", "xeno_8tb8"))
 
     # SQLAlchemy pool tuning
     db_echo: bool = field(default_factory=lambda: os.getenv("DB_ECHO", "false").lower() == "true")
