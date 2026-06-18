@@ -74,25 +74,11 @@ The Xeno backend requires two services on Railway:
 2. Check worker service logs to ensure it connected to Redis
 3. Test the API health endpoint: `https://your-api-url.railway.app/api/docs`
 
-### Step 2: Deploy API Service
-1. Click "New Service" → "Deploy from GitHub repo"
-2. Select your repository
-3. Set root directory to `backend`
-4. Add all environment variables listed above
-5. Deploy
-
-### Step 3: Deploy Worker Service
-1. Click "New Service" → "Deploy from GitHub repo"  
-2. Select the same repository
-3. Set root directory to `backend`
-4. Set start command to: `python -m rq.cli worker --url $REDIS_URL default`
-5. Add the same environment variables as the API service
-6. Deploy
-
-### Step 4: Verify Setup
-1. Check API service logs to ensure it started successfully
-2. Check worker service logs to ensure it connected to Redis
-3. Test the API health endpoint: `https://your-api-url.railway.app/api/docs`
+### Step 5: Configure Vercel Frontend
+1. Go to your Vercel project settings
+2. Add environment variable: `NEXT_PUBLIC_API_URL` = `https://your-api-url.railway.app`
+3. Redeploy the Vercel frontend
+4. Test the full application flow
 
 ## Important Notes
 
