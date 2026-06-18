@@ -7,15 +7,27 @@ const COUNTRY_RULES = [
     { flag: '🇮🇳', name: 'India', rule: '10 digits', initialOn: true },
     { flag: '🇸🇬', name: 'Singapore', rule: '8 digits', initialOn: true },
     { flag: '🇺🇸', name: 'USA', rule: '10 digits', initialOn: true },
-    { flag: '🇩🇪', name: 'Germany', rule: '11 digits', initialOn: false },
+    { flag: '🇩🇪', name: 'Germany', rule: '11 digits', initialOn: true },
 ]
 
 const DATE_FORMATS = [
     { name: 'ISO', format: 'YYYY-MM-DD', initialOn: true },
     { name: 'EU', format: 'DD/MM/YYYY', initialOn: true },
     { name: 'US', format: 'MM/DD/YYYY', initialOn: true },
-    { name: 'Unix epoch', format: 'seconds', initialOn: false },
+    { name: 'Germany', format: 'DD.MM.YYYY', initialOn: true },
+    { name: 'Singapore', format: 'DD-MM-YYYY', initialOn: true },
+    { name: 'Unix epoch', format: 'seconds', initialOn: true },
 ]
+
+const FLAG_MAP: Record<string, string> = {
+    IN: '🇮🇳',
+    SG: '🇸🇬',
+    US: '🇺🇸',
+    DE: '🇩🇪',
+    GB: '🇬🇧',
+    UK: '🇬🇧',
+    AU: '🇦🇺'
+}
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     return (
@@ -155,19 +167,109 @@ function RuleRow({
     )
 }
 
-export default function RuleEngine() {
+function formatPhoneRule(countryCode: string, regex: string): string {
+    const code = countryCode.toUpperCase()
+    if (code === 'IN') return '10 digits'
+    if (code === 'SG') return '8 digits'
+    if (code === 'US') return '10 digits'
+    if (code === 'DE') return '11 digits'
+    if (code === 'GB' || code === 'UK') return '10 digits'
+    if (code === 'AU') return '9 digits'
+
+    // Fallback parsing logic
+    const matchSimple = regex.match(/^\^\\d\{(\d+)\}$/)
+    if (matchSimple) {
+        return `${matchSimple[1]} digits`
+    }
+    const matchRange = regex.match(/^\^\\d\{(\d+),(\d+)\}$/)
+    if (matchRange) {
+        return `${matchRange[2]} digits`
+    }
+    // General fallback
+    return regex.replace(/[\^$]/g, '')
+}
+
+interface RuleEngineProps {
+    rules?: any[]
+    onToggleRule?: (id: string, is_active: boolean) => void
+}
+
+export default function RuleEngine({ rules = [], onToggleRule }: RuleEngineProps) {
     const [countryToggles, setCountryToggles] = useState(
         COUNTRY_RULES.map((r) => r.initialOn)
     )
     const [dateToggles, setDateToggles] = useState(
         DATE_FORMATS.map((f) => f.initialOn)
     )
+    const [localDateToggles, setLocalDateToggles] = useState<Record<string, boolean>>({})
 
-    const toggleCountry = (i: number) => {
-        setCountryToggles((prev) => prev.map((v, idx) => (idx === i ? !v : v)))
+    const hasLiveRules = rules && rules.length > 0
+
+    const displayCountryRules = hasLiveRules 
+        ? rules.map(r => ({
+            id: r.id,
+            flag: FLAG_MAP[r.country_code] || '🌐',
+            name: r.country_name,
+            rule: formatPhoneRule(r.country_code, r.phone_regex),
+            on: r.is_active
+        }))
+        : COUNTRY_RULES.map((r, idx) => ({
+            id: String(idx),
+            flag: r.flag,
+            name: r.name,
+            rule: r.rule,
+            on: countryToggles[idx]
+        }))
+
+    const displayDateFormats = DATE_FORMATS.map((f, idx) => {
+        if (hasLiveRules) {
+            const matchingRules = rules.filter(r => r.date_format === f.format)
+            const hasMatching = matchingRules.length > 0
+            const on = hasMatching
+                ? matchingRules.some(r => r.is_active)
+                : (localDateToggles[f.format] ?? f.initialOn)
+            return {
+                id: f.name,
+                name: f.name,
+                format: f.format,
+                on,
+                hasMatching
+            }
+        } else {
+            return {
+                id: String(idx),
+                name: f.name,
+                format: f.format,
+                on: dateToggles[idx],
+                hasMatching: false
+            }
+        }
+    })
+
+    const handleToggleCountry = (id: string, currentOn: boolean, idx: number) => {
+        if (hasLiveRules && onToggleRule) {
+            onToggleRule(id, !currentOn)
+        } else {
+            setCountryToggles(prev => prev.map((v, i) => i === idx ? !v : v))
+        }
     }
-    const toggleDate = (i: number) => {
-        setDateToggles((prev) => prev.map((v, idx) => (idx === i ? !v : v)))
+
+    const handleToggleDate = (formatString: string, currentOn: boolean, idx: number) => {
+        if (hasLiveRules && onToggleRule) {
+            const matchingRules = rules.filter(r => r.date_format === formatString)
+            if (matchingRules.length > 0) {
+                matchingRules.forEach(r => {
+                    onToggleRule(r.id, !currentOn)
+                })
+            } else {
+                setLocalDateToggles(prev => ({
+                    ...prev,
+                    [formatString]: !currentOn
+                }))
+            }
+        } else {
+            setDateToggles(prev => prev.map((v, i) => i === idx ? !v : v))
+        }
     }
 
     return (
@@ -243,30 +345,30 @@ export default function RuleEngine() {
                 >
                     {/* Country rules panel */}
                     <GlassPanel title="country-rules.yaml">
-                        {COUNTRY_RULES.map((rule, i) => (
+                        {displayCountryRules.map((rule, idx) => (
                             <RuleRow
-                                key={rule.name}
+                                key={rule.id + '-' + idx}
                                 label={
                                     <>
                                         {rule.flag} {rule.name}
                                     </>
                                 }
                                 value={rule.rule}
-                                on={countryToggles[i]}
-                                onToggle={() => toggleCountry(i)}
+                                on={rule.on}
+                                onToggle={() => handleToggleCountry(rule.id, rule.on, idx)}
                             />
                         ))}
                     </GlassPanel>
 
                     {/* Date formats panel */}
                     <GlassPanel title="date-formats.yaml">
-                        {DATE_FORMATS.map((fmt, i) => (
+                        {displayDateFormats.map((fmt, idx) => (
                             <RuleRow
-                                key={fmt.name}
+                                key={fmt.id + '-' + idx}
                                 label={fmt.name}
                                 value={fmt.format}
-                                on={dateToggles[i]}
-                                onToggle={() => toggleDate(i)}
+                                on={fmt.on}
+                                onToggle={() => handleToggleDate(fmt.format, fmt.on, idx)}
                             />
                         ))}
                     </GlassPanel>

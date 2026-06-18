@@ -28,6 +28,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
         let baseY: Float32Array
         let baseZ: Float32Array
         let speed: Float32Array
+
         let orderFactor = 0
         let targetOrder = 0
         let mouseX = 0, mouseY = 0
@@ -137,6 +138,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                     grid[i * 3 + 1] = (gy / (rows - 1) - 0.5) * 13
                     grid[i * 3 + 2] = 0
 
+                    // Initial colors — overwritten per-frame based on position
                     colors[i * 3 + 0] = 0.3
                     colors[i * 3 + 1] = 0.55
                     colors[i * 3 + 2] = 1.0
@@ -200,11 +202,21 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                 const heroSection = canvas.parentElement
                 const onScroll = () => {
                     if (!heroSection) return
+                    // Guard: don't start the order transition until the user has
+                    // scrolled at least 60px — eliminates false positives from
+                    // browser scroll-restoration, hydration layout shifts, and
+                    // sub-pixel rect.top drift on initial paint.
+                    if (window.scrollY < 60) {
+                        targetOrder = 0
+                        return
+                    }
                     const rect = heroSection.getBoundingClientRect()
+                    if (rect.height <= 0) return
                     const progress = Math.min(
                         1,
-                        Math.max(0, -rect.top / (rect.height * 0.9))
+                        Math.max(0, -rect.top / (rect.height * 0.6))
                     )
+                    if (isNaN(progress)) return
                     targetOrder = progress
                 }
 
@@ -216,6 +228,12 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                 window.addEventListener('scroll', onScroll, { passive: true })
                 window.addEventListener('mousemove', onMouseMove)
 
+                // Defer initial scroll check by one rAF so layout is fully settled
+                // before we calculate rect positions. This prevents a flash where
+                // targetOrder gets set to > 0 during hydration layout shift.
+                requestAnimationFrame(() => {
+                    if (!disposed) onScroll()
+                })
                 updateCorePosition()
 
                 const posAttr = geometry.attributes.position
@@ -232,7 +250,14 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                     const dt = (now - t0) / 1000
                     t0 = now
 
-                    orderFactor += (targetOrder - orderFactor) * 0.04
+                    // Lerp faster when returning to 0 (scroll back up) so
+                    // the chaotic flow resumes promptly, but not so fast it
+                    // fights a momentary bad rect reading.
+                    const lerpSpeed = targetOrder < orderFactor ? 0.07 : 0.04
+                    orderFactor += (targetOrder - orderFactor) * lerpSpeed
+                    // Dead zone: snap tiny residual values to 0 so scroll jitter /
+                    // hydration noise never partially hides the rings.
+                    if (orderFactor < 0.015) orderFactor = 0
                     const currentIntensity = intensityRef.current
 
                     updateCorePosition()
@@ -257,6 +282,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                         const iy = i * 3 + 1
                         const iz = i * 3 + 2
 
+                        // Left-to-right streaming flow
                         baseX[i] += speed[i] * (1 + currentIntensity * 1.8)
                         if (baseX[i] > 18) {
                             baseX[i] = -18
@@ -268,12 +294,14 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                         let fy = baseY[i]
                         let fz = baseZ[i]
 
+                        // Gravitational pull toward reactor core
                         const dx = fx - coreX
                         const pull = Math.exp(-(dx * dx) / 18)
 
                         fy = fy * (1 - pull) + coreY * pull
                         fz = fz * (1 - pull)
 
+                        // Swirl near core
                         if (pull > 0.01) {
                             const swirlSpeed = now * 0.0035 + noisePhase[i]
                             const swirlRadius = (1.5 + Math.sin(now * 0.001 + noisePhase[i]) * 0.3) * pull
@@ -281,6 +309,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                             fz += Math.cos(swirlSpeed) * swirlRadius
                         }
 
+                        // Ambient wiggle
                         const wiggle = (1 - pull) * 0.35
                         const ny = Math.sin(now * 0.001 + noisePhase[i]) * wiggle
                         const nz = Math.cos(now * 0.0015 + noisePhase[i]) * wiggle
@@ -301,18 +330,15 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                         posAttr.array[iy] = finalY
                         posAttr.array[iz] = finalZ
 
+                        // Position-based recoloring: blue → purple → gold
                         let r, g, b
                         const transX = finalX - coreX
                         const transitionWidth = 3.0
 
                         if (transX < -transitionWidth) {
-                            r = cBlue.r
-                            g = cBlue.g
-                            b = cBlue.b
+                            r = cBlue.r;  g = cBlue.g;  b = cBlue.b
                         } else if (transX > transitionWidth) {
-                            r = cGold.r
-                            g = cGold.g
-                            b = cGold.b
+                            r = cGold.r;  g = cGold.g;  b = cGold.b
                         } else {
                             const t = (transX + transitionWidth) / (2 * transitionWidth)
                             if (t < 0.5) {
@@ -338,14 +364,18 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
 
                     material.size = (0.16 + currentIntensity * 0.14) * (1 - orderFactor * 0.3)
 
+                    // Subtle micro-parallax on mouse — no core offset so rings stay aligned
                     camera.position.x += (mouseX * 2 - camera.position.x) * 0.03
                     camera.position.y += (-mouseY * 1.4 - camera.position.y) * 0.03
                     camera.lookAt(0, 0, 0)
-                    points.rotation.y += dt * 0.02
 
                     renderer.render(scene, camera)
                 }
 
+                // Reset t0 right before the loop starts — loadThree() is async
+                // so the gap between useEffect init and first animate() call can
+                // be 100–500ms, causing a huge dt spike on frame 1.
+                t0 = performance.now()
                 animate()
 
                 const onResize = () => {

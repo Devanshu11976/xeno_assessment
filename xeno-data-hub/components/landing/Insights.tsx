@@ -34,9 +34,42 @@ const INSIGHT_POINTS = [
     },
 ]
 
-export default function Insights() {
+interface InsightsProps {
+    latestJob?: any
+    latestReport?: any
+}
+
+export default function Insights({ latestJob, latestReport }: InsightsProps) {
     const reportRef = useRef<HTMLDivElement>(null)
     const isInView = useInView(reportRef, { once: true, margin: '-10% 0px' })
+
+    const hasLiveReport = latestJob && latestReport
+
+    const qualityScore = hasLiveReport ? latestReport.quality_score : 92
+    const batchName = hasLiveReport ? `#${latestJob.job_id}` : '#4471'
+    const thresholdText = qualityScore >= 90 ? 'above your 90 threshold' : 'below your 90 threshold'
+
+    const recommendations = hasLiveReport ? latestReport.recommendations : RECOMMENDATIONS
+
+    let barData = BAR_DATA
+    if (hasLiveReport && latestJob.validation_breakdown) {
+        const breakdown = latestJob.validation_breakdown
+        const entries = Object.entries(breakdown)
+        const total = entries.reduce((acc, [, v]) => acc + (v as number), 0)
+        if (total > 0) {
+            barData = entries
+                .map(([k, v]) => ({
+                    label: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                    pct: Math.round(((v as number) / total) * 100)
+                }))
+                .sort((a, b) => b.pct - a.pct)
+                .slice(0, 4)
+        }
+    }
+
+    const r = 26
+    const circ = 2 * Math.PI * r
+    const strokeDashoffset = circ - (qualityScore / 100) * circ
 
     return (
         <section
@@ -186,7 +219,7 @@ export default function Insights() {
                                 color: 'var(--mist)',
                             }}
                         >
-                            data-quality-report — batch #4471
+                            data-quality-report — batch {batchName}
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
                             {[0, 1, 2].map((i) => (
@@ -243,8 +276,9 @@ export default function Insights() {
                                     stroke="var(--signal)"
                                     strokeWidth="5"
                                     strokeLinecap="round"
-                                    strokeDasharray="163.4"
-                                    strokeDashoffset="13.1"
+                                    strokeDasharray={circ}
+                                    strokeDashoffset={strokeDashoffset}
+                                    style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
                                 />
                             </svg>
                             <div
@@ -259,7 +293,7 @@ export default function Insights() {
                                     fontSize: 15,
                                 }}
                             >
-                                92
+                                {qualityScore}
                             </div>
                         </div>
                         <div>
@@ -277,7 +311,7 @@ export default function Insights() {
                             <div
                                 style={{ marginTop: 5, fontSize: 13, color: 'var(--paper)', fontWeight: 500 }}
                             >
-                                92 / 100 — above your 90 threshold
+                                {qualityScore} / 100 — {thresholdText}
                             </div>
                         </div>
                     </div>
@@ -298,18 +332,29 @@ export default function Insights() {
                                 marginBottom: 24,
                             }}
                         >
-                            <span style={{ color: 'var(--refine)', fontWeight: 600 }}>
-                                Finding —
-                            </span>{' '}
-                            Malformed phone numbers from the{' '}
-                            <span style={{ color: 'var(--refine)', fontWeight: 600 }}>DE</span>{' '}
-                            region rose 12% in this batch, concentrated in orders placed after
-                            18:00 UTC. Pattern matches a checkout form regression, not random
-                            noise.
+                            {hasLiveReport ? (
+                                <>
+                                    <span style={{ color: 'var(--refine)', fontWeight: 600 }}>
+                                        AI Summary —
+                                    </span>{' '}
+                                    {latestReport.executive_summary}
+                                </>
+                            ) : (
+                                <>
+                                    <span style={{ color: 'var(--refine)', fontWeight: 600 }}>
+                                        Finding —
+                                    </span>{' '}
+                                    Malformed phone numbers from the{' '}
+                                    <span style={{ color: 'var(--refine)', fontWeight: 600 }}>DE</span>{' '}
+                                    region rose 12% in this batch, concentrated in orders placed after
+                                    18:00 UTC. Pattern matches a checkout form regression, not random
+                                    noise.
+                                </>
+                            )}
                         </div>
 
                         {/* Bars */}
-                        {BAR_DATA.map((bar) => (
+                        {barData.map((bar) => (
                             <div
                                 key={bar.label}
                                 style={{
@@ -389,7 +434,7 @@ export default function Insights() {
                             >
                                 AI recommendations
                             </div>
-                            {RECOMMENDATIONS.map((rec, i) => (
+                            {recommendations.map((rec: string, i: number) => (
                                 <div
                                     key={i}
                                     style={{

@@ -1,19 +1,58 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import ValidationCore from './ValidationCore'
 import UploadPortal from './UploadPortal'
 
-const METRIC_BADGES = [
-    { value: '1.2M', label: 'records today', pos: { top: '-5%', left: '-18%' }, delay: 0 },
-    { value: '99.97%', label: 'accuracy', pos: { top: '2%', right: '-22%' }, delay: 1.4 },
-    { value: '190+', label: 'country rules', pos: { bottom: '12%', left: '-26%' }, delay: 2.8 },
-    { value: '32', label: 'active jobs', pos: { bottom: '-10%', right: '-12%' }, delay: 0.7 },
-]
+const DEMO_EMAIL = 'sanmatijain2204@gmail.com'
 
-export default function Hero() {
+/** Smooth-scrolls to the upload portal and focuses the dropzone */
+export function scrollToUpload() {
+    const el = document.getElementById('upload-portal-dropzone')
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // Small delay so scroll finishes before focus ring appears
+    setTimeout(() => el.focus(), 500)
+}
+
+interface HeroProps {
+    rulesCount?: number
+    jobs?: any[]
+}
+
+export default function Hero({ rulesCount = 0, jobs = [] }: HeroProps) {
     const [intensity, setIntensity] = useState(0)
+    const router = useRouter()
+
+    const activeJobs = jobs.filter(j => j.status === 'queued' || j.status === 'processing').length
+    const sumRecords = jobs.reduce((acc, j) => acc + (j.total_records ?? 0), 0)
+    const totalValid = jobs.reduce((acc, j) => acc + (j.valid_records ?? 0), 0)
+
+    const formattedRecords = sumRecords > 0 
+        ? (sumRecords >= 1000000 
+            ? `${(sumRecords / 1000000).toFixed(1)}M` 
+            : (sumRecords >= 1000 
+                ? `${(sumRecords / 1000).toFixed(1)}K` 
+                : `${sumRecords}`))
+        : '1.2M'
+
+    const formattedAccuracy = sumRecords > 0
+        ? `${((totalValid / sumRecords) * 100).toFixed(2)}%`
+        : '99.97%'
+
+    const badges = [
+        { value: formattedRecords, label: 'records processed', pos: { top: '-5%', left: '-18%' }, delay: 0 },
+        { value: formattedAccuracy, label: 'accuracy', pos: { top: '2%', right: '-22%' }, delay: 1.4 },
+        { value: rulesCount > 0 ? `${rulesCount}` : '190+', label: 'country rules', pos: { bottom: '12%', left: '-26%' }, delay: 2.8 },
+        { value: jobs.length > 0 ? `${activeJobs}` : '32', label: 'active jobs', pos: { bottom: '-10%', right: '-12%' }, delay: 0.7 },
+    ]
+
+    const handleStartValidating = useCallback((e: React.MouseEvent) => {
+        e.preventDefault()
+        scrollToUpload()
+    }, [])
 
     return (
         <section
@@ -141,7 +180,9 @@ export default function Hero() {
                         }}
                     >
                         <motion.a
-                            href="#cta"
+                            href="#upload-portal-dropzone"
+                            aria-label="Start validating — scroll to upload portal"
+                            onClick={handleStartValidating}
                             whileHover={{ y: -2 }}
                             style={{
                                 padding: '14px 26px',
@@ -152,12 +193,15 @@ export default function Hero() {
                                 background: 'linear-gradient(120deg, #fff, #e7e9ee)',
                                 boxShadow: '0 8px 30px rgba(245,176,66,0.18)',
                                 display: 'inline-block',
+                                cursor: 'pointer',
                             }}
                         >
                             Start validating
                         </motion.a>
                         <motion.a
-                            href="#insights"
+                            href="/workspace?demo=true"
+                            aria-label="View a sample validation report"
+                            onClick={(e) => { e.preventDefault(); router.push('/workspace?demo=true') }}
                             whileHover={{ y: -2 }}
                             style={{
                                 padding: '14px 26px',
@@ -222,7 +266,7 @@ export default function Hero() {
                     }}
                 >
                     <div id="upload-portal-container" style={{ position: 'relative', zIndex: 3, width: '100%', display: 'flex', justifyContent: 'center' }}>
-                        <UploadPortal onIntensityChange={setIntensity} />
+                        <UploadPortal onIntensityChange={setIntensity} rulesCount={rulesCount} />
                     </div>
 
                     {/* Floating metric badges */}
@@ -233,7 +277,7 @@ export default function Hero() {
                             pointerEvents: 'none',
                         }}
                     >
-                        {METRIC_BADGES.map((badge, i) => (
+                        {badges.map((badge, i) => (
                             <motion.div
                                 key={i}
                                 className="hero-badge"

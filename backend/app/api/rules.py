@@ -23,6 +23,7 @@ class RulesController(Controller):
                 country_name=r.country_name,
                 phone_regex=r.phone_regex,
                 date_format=r.date_format,
+                valid_payment_modes=r.valid_payment_modes,
                 is_active=r.is_active,
             )
             for r in rules
@@ -43,6 +44,7 @@ class RulesController(Controller):
             country_name=data.country_name,
             phone_regex=data.phone_regex,
             date_format=data.date_format,
+            valid_payment_modes=data.valid_payment_modes,
             is_active=data.is_active,
         )
         await repo.create(rule)
@@ -53,6 +55,7 @@ class RulesController(Controller):
             country_name=rule.country_name,
             phone_regex=rule.phone_regex,
             date_format=rule.date_format,
+            valid_payment_modes=rule.valid_payment_modes,
             is_active=rule.is_active,
         )
 
@@ -68,6 +71,8 @@ class RulesController(Controller):
             rule.phone_regex = data.phone_regex
         if data.date_format is not None:
             rule.date_format = data.date_format
+        if data.valid_payment_modes is not None:
+            rule.valid_payment_modes = data.valid_payment_modes
         if data.is_active is not None:
             rule.is_active = data.is_active
         await session.flush()
@@ -78,6 +83,7 @@ class RulesController(Controller):
             country_name=rule.country_name,
             phone_regex=rule.phone_regex,
             date_format=rule.date_format,
+            valid_payment_modes=rule.valid_payment_modes,
             is_active=rule.is_active,
         )
 

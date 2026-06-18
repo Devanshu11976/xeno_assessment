@@ -1,8 +1,17 @@
 'use client'
 
+import { useCallback } from 'react'
 import { motion } from 'framer-motion'
+import { scrollToUpload } from './Hero'
+
+const DEMO_EMAIL = 'sanmatijain2204@gmail.com'
 
 export default function CTA() {
+    const handleStartValidating = useCallback((e: React.MouseEvent) => {
+        e.preventDefault()
+        scrollToUpload()
+    }, [])
+
     return (
         <section
             id="cta"
@@ -69,8 +78,11 @@ export default function CTA() {
                             flexWrap: 'wrap',
                         }}
                     >
+                        {/* Start validating free → scroll to upload portal */}
                         <motion.a
-                            href="#"
+                            href="#upload-portal-dropzone"
+                            aria-label="Start validating free — scroll to upload portal"
+                            onClick={handleStartValidating}
                             whileHover={{ y: -2 }}
                             style={{
                                 padding: '14px 26px',
@@ -81,12 +93,16 @@ export default function CTA() {
                                 background: 'linear-gradient(120deg, #fff, #e7e9ee)',
                                 boxShadow: '0 8px 30px rgba(245,176,66,0.18)',
                                 display: 'inline-block',
+                                cursor: 'pointer',
                             }}
                         >
                             Start validating free
                         </motion.a>
+
+                        {/* Talk to the team → mailto */}
                         <motion.a
-                            href="#"
+                            href={`mailto:${DEMO_EMAIL}?subject=Xeno%20Data%20Intelligence%20Hub%20Inquiry`}
+                            aria-label="Talk to the team — send us an email"
                             whileHover={{ y: -2 }}
                             style={{
                                 padding: '14px 26px',
@@ -100,12 +116,12 @@ export default function CTA() {
                                 display: 'inline-block',
                             }}
                             onMouseEnter={(e) =>
-                            ((e.currentTarget as HTMLElement).style.borderColor =
-                                'rgba(255,255,255,0.25)')
+                                ((e.currentTarget as HTMLElement).style.borderColor =
+                                    'rgba(255,255,255,0.25)')
                             }
                             onMouseLeave={(e) =>
-                            ((e.currentTarget as HTMLElement).style.borderColor =
-                                'var(--line)')
+                                ((e.currentTarget as HTMLElement).style.borderColor =
+                                    'var(--line)')
                             }
                         >
                             Talk to the team

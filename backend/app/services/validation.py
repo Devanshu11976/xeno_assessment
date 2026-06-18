@@ -15,11 +15,6 @@ EXPECTED_COLUMNS = [
     "phone_number", "payment_mode", "transaction_date",
 ]
 
-# Accept payment modes from common gateways — not hardcoded per country
-VALID_PAYMENT_MODES = {
-    "UPI", "CARD", "NETBANKING", "CASH",
-}
-
 COLUMN_ALIASES = {
     "customer_phone": "phone_number",
     "phone":          "phone_number",
@@ -31,26 +26,14 @@ COLUMN_ALIASES = {
     "txn_amount":     "amount",
 }
 
-# Digit-length expectations per country code
-PHONE_DIGIT_LENGTHS: dict[str, int | tuple] = {
-    "IN": 10,
-    "SG": 8,
-    "US": 10,
-    "GB": 10,
-    "AU": 9,
-    "DE": (10, 11),
-}
+# Permissive fallback used only when no DB rule is found for a country
+_FALLBACK_PHONE_REGEX = r"^\+?\d{7,15}$"
 
 
-def _is_valid_phone(phone_val: str, cc: str, phone_regex: str) -> bool:
-    digits = re.sub(r"\D", "", phone_val)
-    rule = PHONE_DIGIT_LENGTHS.get(cc)
-    if isinstance(rule, int):
-        return len(digits) == rule
-    if isinstance(rule, tuple):
-        return len(digits) in rule
-    # Fall back to DB regex for countries not in the length map
-    return bool(re.match(phone_regex, phone_val))
+def _is_valid_phone(phone_val: str, phone_regex: str) -> bool:
+    """Validate phone using the DB-supplied regex exclusively.
+    No hardcoded digit-length tables — fully config-driven."""
+    return bool(re.match(phone_regex, phone_val.strip()))
 
 
 def _is_valid_date(date_val: str) -> bool:
@@ -179,8 +162,12 @@ class ValidationService:
             country_stats.setdefault(display_country, {"total": 0, "valid": 0, "invalid": 0})
             country_stats[display_country]["total"] += 1
 
-            phone_regex = row_rule.phone_regex if row_rule else r"^\+?\d{7,15}$"
-            cc = row_rule.country_code.upper() if row_rule else display_country
+            phone_regex = row_rule.phone_regex if row_rule else _FALLBACK_PHONE_REGEX
+            # Load payment modes from DB rule; None = accept all (permissive)
+            valid_modes: list[str] | None = (
+                [m.upper() for m in row_rule.valid_payment_modes]
+                if row_rule and row_rule.valid_payment_modes else None
+            )
 
             # Surface Pandera failures for this row
             for pe in pandera_errors.get(row_idx, []):
@@ -205,14 +192,17 @@ class ValidationService:
                         })
                         breakdown["missing_fields"] += 1
 
-            # Phone
+            # Phone — DB regex only, no hardcoded digit-length tables
             if row.get("phone_number"):
                 phone_val = str(row["phone_number"]).strip()
-                if not _is_valid_phone(phone_val, cc, phone_regex):
+                if not _is_valid_phone(phone_val, phone_regex):
                     row_errors.append({
                         "row_number": row_idx + 1,
                         "column_name": "phone_number",
-                        "error_message": f"Phone '{phone_val}' invalid for {cc}",
+                        "error_message": (
+                            f"Phone '{phone_val}' does not match configured "
+                            f"regex for country '{display_country}'"
+                        ),
                         "error_type": "invalid_phone",
                     })
                     breakdown["invalid_phone"] += 1
@@ -265,13 +255,16 @@ class ValidationService:
                     })
                     breakdown["negative_amount"] += 1
 
-            # Payment mode
-            if row.get("payment_mode"):
+            # Payment mode — DB-loaded per country; None = accept all
+            if row.get("payment_mode") and valid_modes is not None:
                 pm = str(row["payment_mode"]).strip().upper()
-                if pm not in VALID_PAYMENT_MODES:
+                if pm not in valid_modes:
                     row_errors.append({
                         "row_number": row_idx + 1, "column_name": "payment_mode",
-                        "error_message": f"Invalid payment mode: '{pm}'",
+                        "error_message": (
+                            f"Payment mode '{pm}' not in configured modes for "
+                            f"'{display_country}': {valid_modes}"
+                        ),
                         "error_type": "invalid_payment_mode",
                     })
                     breakdown["invalid_payment_mode"] += 1

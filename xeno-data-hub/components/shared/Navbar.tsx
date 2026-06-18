@@ -1,5 +1,7 @@
 'use client'
 
+const DEMO_EMAIL = 'sanmatijain2204@gmail.com'
+
 export default function Navbar() {
     return (
         <nav
@@ -49,7 +51,7 @@ export default function Navbar() {
                 </span>
             </div>
 
-            {/* Nav links — hidden on small screens */}
+            {/* Nav links */}
             <div
                 className="nav-links-desktop"
                 style={{
@@ -78,9 +80,10 @@ export default function Navbar() {
                 )}
             </div>
 
-            {/* CTA */}
+            {/* Book a demo → mailto */}
             <a
-                href="#cta"
+                href={`mailto:${DEMO_EMAIL}?subject=Xeno%20Data%20Intelligence%20Hub%20Demo%20Request`}
+                aria-label="Book a demo — send us an email"
                 style={{
                     fontSize: 13.5,
                     fontWeight: 500,
@@ -91,14 +94,15 @@ export default function Navbar() {
                     border: '1px solid rgba(255,255,255,0.14)',
                     transition: 'border-color 0.2s',
                     cursor: 'pointer',
+                    whiteSpace: 'nowrap',
                 }}
                 onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.borderColor =
-                    'rgba(255,255,255,0.3)')
+                    ((e.currentTarget as HTMLElement).style.borderColor =
+                        'rgba(255,255,255,0.3)')
                 }
                 onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.borderColor =
-                    'rgba(255,255,255,0.14)')
+                    ((e.currentTarget as HTMLElement).style.borderColor =
+                        'rgba(255,255,255,0.14)')
                 }
             >
                 Book a demo

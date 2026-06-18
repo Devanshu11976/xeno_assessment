@@ -224,12 +224,7 @@ function QualityRing({ score }: { score: number }) {
 }
 
 // ─── 1. Country Analysis Cards ────────────────────────────────────────────────
-const COUNTRY_NAMES: Record<string,string> = {
-  IN:'India', SG:'Singapore', US:'USA', DE:'Germany',
-  GB:'United Kingdom', AU:'Australia', UK:'United Kingdom',
-}
-
-function CountryAnalysisSection({ countryStats }: { countryStats: Record<string,CountryStat> }) {
+function CountryAnalysisSection({ countryStats, countryNames }: { countryStats: Record<string,CountryStat>; countryNames: Record<string,string> }) {
   const entries = Object.entries(countryStats)
   if (!entries.length) return null
   return (
@@ -238,7 +233,7 @@ function CountryAnalysisSection({ countryStats }: { countryStats: Record<string,
         {entries.map(([code, s]) => {
           const passRate = s.total ? (s.valid/s.total)*100 : 0
           const col = passRate>=80?'#10b981':passRate>=60?'var(--signal)':'#f87171'
-          const name = COUNTRY_NAMES[code] ?? code
+          const name = countryNames[code] ?? code
           return (
             <div key={code}
               style={{
@@ -299,27 +294,71 @@ function CountryAnalysisSection({ countryStats }: { countryStats: Record<string,
 
 // ─── 2. Download Center ───────────────────────────────────────────────────────
 function DownloadCard({ icon, label, accent, url, recordCount, fileSizeBytes }: {
-  icon: string; label: string; accent: string; url: string
+  icon: string; label: string; accent: string; url: string | null
   recordCount: number | null; fileSizeBytes: number | null
 }) {
   const [hov, setHov] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const isDemo = !url
+
+  const handleDownload = async () => {
+    if (!url || downloading) return
+    setDownloading(true)
+    try {
+      const res = await fetch(`${API_BASE}${url}`)
+      if (!res.ok) throw new Error(`Download failed: ${res.status}`)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      // Extract filename from Content-Disposition header or generate from URL
+      const disposition = res.headers.get('Content-Disposition')
+      let filename = 'download.csv'
+      if (disposition) {
+        const match = disposition.match(/filename="?([^";\n]+)"?/)
+        if (match) filename = match[1]
+      } else {
+        // Derive filename from URL path
+        const parts = url.split('/')
+        filename = parts[parts.length - 1] + '.csv'
+      }
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      console.error('Download error:', err)
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
-    <a href={`${API_BASE}${url}`} download
-      style={{
-        flex:'1 1 160px', minWidth:150, textDecoration:'none',
-        display:'flex', flexDirection:'column', gap:10,
-        padding:'16px 18px', borderRadius:14,
-        background: hov ? `${accent}0f` : 'rgba(255,255,255,0.03)',
-        border:`1px solid ${hov ? accent : `${accent}33`}`,
-        transition:'all 0.18s ease', transform: hov?'translateY(-2px)':'translateY(0)',
-        cursor:'pointer',
-      }}
-      onMouseEnter={()=>setHov(true)}
-      onMouseLeave={()=>setHov(false)}
+    <div style={{
+      flex:'1 1 160px', minWidth:150, textDecoration:'none',
+      display:'flex', flexDirection:'column', gap:10,
+      padding:'16px 18px', borderRadius:14,
+      background: hov && !isDemo ? `${accent}0f` : 'rgba(255,255,255,0.03)',
+      border:`1px solid ${hov && !isDemo ? accent : `${accent}33`}`,
+      transition:'all 0.18s ease', transform: hov && !isDemo ?'translateY(-2px)':'translateY(0)',
+      cursor: isDemo ? 'default' : 'pointer',
+      opacity: isDemo ? 0.6 : 1,
+    }}
+    onMouseEnter={()=>setHov(true)}
+    onMouseLeave={()=>setHov(false)}
+    onClick={!isDemo ? handleDownload : undefined}
     >
       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-        <span style={{ fontSize:18, lineHeight:1 }}>{icon}</span>
-        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:600, color:accent }}>{label}</span>
+        <span style={{ fontSize:18, lineHeight:1 }}>{downloading ? '⏳' : icon}</span>
+        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:600, color:accent }}>
+          {downloading ? 'Downloading…' : label}
+        </span>
+        {isDemo && (
+          <span style={{ fontSize:9, fontFamily:"'IBM Plex Mono',monospace", color:'var(--mist-dim)', marginLeft:'auto', letterSpacing:'0.06em', textTransform:'uppercase' }}>
+            demo
+          </span>
+        )}
       </div>
       <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
         {recordCount !== null && (
@@ -333,17 +372,18 @@ function DownloadCard({ icon, label, accent, url, recordCount, fileSizeBytes }: 
           </span>
         )}
       </div>
-    </a>
+    </div>
   )
 }
 
 function DownloadCenter({ downloads }: { downloads: Downloads }) {
-  const hasAny = downloads.clean_transactions_url || downloads.error_report_url || downloads.chunks.length > 0
+  // In demo mode urls are null but record counts exist — still show the cards
+  const hasAny = downloads.clean_record_count || downloads.error_record_count || downloads.chunks.length > 0
   if (!hasAny) return null
   return (
     <SectionCard title="Download Results" delay={120}>
       <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-        {downloads.clean_transactions_url && (
+        {(downloads.clean_transactions_url || downloads.clean_record_count) && (
           <DownloadCard icon="✓" label="Clean Dataset" accent="#10b981"
             url={downloads.clean_transactions_url}
             recordCount={downloads.clean_record_count}
@@ -355,9 +395,15 @@ function DownloadCenter({ downloads }: { downloads: Downloads }) {
             recordCount={downloads.error_record_count}
             fileSizeBytes={downloads.error_file_size_bytes}/>
         )}
+        {(downloads.error_report_url === null && downloads.error_record_count) && (
+          <DownloadCard icon="⚠" label="Error Report" accent="#f87171"
+            url={null}
+            recordCount={downloads.error_record_count}
+            fileSizeBytes={downloads.error_file_size_bytes}/>
+        )}
         {downloads.chunks.map((c,i)=>(
-          <DownloadCard key={c.url} icon="▦" label={`Chunk ${i+1}`} accent="var(--ingest)"
-            url={c.url} recordCount={c.record_count} fileSizeBytes={c.file_size_bytes}/>
+          <DownloadCard key={i} icon="▦" label={`Chunk ${i+1}`} accent="var(--ingest)"
+            url={c.url ?? null} recordCount={c.record_count} fileSizeBytes={c.file_size_bytes}/>
         ))}
       </div>
     </SectionCard>
@@ -365,7 +411,7 @@ function DownloadCenter({ downloads }: { downloads: Downloads }) {
 }
 
 // ─── 3. AI Insights — structured layout ──────────────────────────────────────
-function AIInsightsSection({ report, qualityScore }: { report: AIReport; qualityScore: number }) {
+function AIInsightsSection({ report, qualityScore, countryNames }: { report: AIReport; qualityScore: number; countryNames: Record<string,string> }) {
   // Derive highest-error country from country_analysis
   const highestErrorRegion = Object.entries(report.country_analysis).find(([,v])=>{
     const s = typeof v==='string'?v:(v as any)?.status??''
@@ -425,7 +471,7 @@ function AIInsightsSection({ report, qualityScore }: { report: AIReport; quality
                 Highest Error Region
               </div>
               <div style={{ fontSize:14, fontWeight:600, color:'#f87171', fontFamily:"'Space Grotesk',sans-serif" }}>
-                {COUNTRY_NAMES[highestErrorRegion] ?? highestErrorRegion}
+                {countryNames[highestErrorRegion] ?? highestErrorRegion}
               </div>
             </div>
           )}
@@ -560,6 +606,7 @@ function PipelinePerformance({ job, downloads }: { job: JobDetails; downloads: D
 function WorkspaceDashboard() {
   const searchParams = useSearchParams()
   const jobId = searchParams.get('job_id')
+  const isDemo = searchParams.get('demo') === 'true'
 
   const [job,       setJob]       = useState<JobDetails | null>(null)
   const [report,    setReport]    = useState<AIReport | null>(null)
@@ -567,8 +614,38 @@ function WorkspaceDashboard() {
   const [status,    setStatus]    = useState<JobStatus | 'loading'>('loading')
   const [error,     setError]     = useState('')
   const terminalRef = useRef(false)
+  const [countryNames, setCountryNames] = useState<Record<string, string>>({})
+
+  // Fetch country names from the DB-backed rules API — no static map
+  useEffect(() => {
+    fetch(`${API_BASE}/api/rules`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rules: Array<{ country_code: string; country_name: string }>) => {
+        const map: Record<string, string> = {}
+        rules.forEach(r => { map[r.country_code.toUpperCase()] = r.country_name })
+        setCountryNames(map)
+      })
+      .catch(() => {})
+  }, [])
+
+  // ── Demo mode: skip all API calls, load mock data immediately ──
+  useEffect(() => {
+    if (!isDemo) return
+    // Simulate a brief "processing" flash so the UI feels real
+    const t = setTimeout(() => {
+      import('@/lib/mock-data').then(({ DEMO_JOB, DEMO_REPORT, DEMO_DOWNLOADS }) => {
+        setJob(DEMO_JOB as unknown as JobDetails)
+        setReport(DEMO_REPORT as AIReport)
+        setDownloads(DEMO_DOWNLOADS as unknown as Downloads)
+        setStatus('completed')
+        terminalRef.current = true
+      })
+    }, 800)
+    return () => clearTimeout(t)
+  }, [isDemo])
 
   const fetchJob = useCallback(async () => {
+    if (isDemo) return
     if (!jobId) { setStatus('failed'); setError('No job_id in URL.'); return }
     try {
       const res = await fetch(`${API_BASE}/api/jobs/${jobId}`)
@@ -579,32 +656,34 @@ function WorkspaceDashboard() {
       setStatus(data.status)
       if (data.status === 'completed' || data.status === 'failed') terminalRef.current = true
     } catch (e) { console.error('fetchJob', e) }
-  }, [jobId])
+  }, [jobId, isDemo])
 
   const fetchReport = useCallback(async () => {
-    if (!jobId) return
+    if (isDemo || !jobId) return
     try { const r = await fetch(`${API_BASE}/api/jobs/${jobId}/report`); if (r.ok) setReport(await r.json()) }
     catch { /* non-fatal */ }
-  }, [jobId])
+  }, [jobId, isDemo])
 
   const fetchDownloads = useCallback(async () => {
-    if (!jobId) return
+    if (isDemo || !jobId) return
     try { const r = await fetch(`${API_BASE}/api/jobs/${jobId}/downloads`); if (r.ok) setDownloads(await r.json()) }
     catch { /* non-fatal */ }
-  }, [jobId])
+  }, [jobId, isDemo])
 
   useEffect(() => {
+    if (isDemo) return
     fetchJob()
     const id = setInterval(() => {
       if (terminalRef.current) { clearInterval(id); return }
       fetchJob()
     }, POLL_MS)
     return () => clearInterval(id)
-  }, [fetchJob])
+  }, [fetchJob, isDemo])
 
   useEffect(() => {
+    if (isDemo) return
     if (status === 'completed') { fetchReport(); fetchDownloads() }
-  }, [status, fetchReport, fetchDownloads])
+  }, [status, fetchReport, fetchDownloads, isDemo])
 
   const qualityScore = report?.quality_score ?? null
 
@@ -621,7 +700,20 @@ function WorkspaceDashboard() {
           <h1 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:28, fontWeight:600, marginBottom:10 }}>
             Validation Workspace
           </h1>
-          {jobId && (
+          {/* Demo badge */}
+          {isDemo && (
+            <div style={{
+              display:'inline-flex', alignItems:'center', gap:6,
+              fontFamily:"'IBM Plex Mono',monospace", fontSize:11,
+              color:'var(--signal)', background:'rgba(245,176,66,0.08)',
+              padding:'4px 12px', borderRadius:6, border:'1px solid rgba(245,176,66,0.25)',
+              marginBottom:10, letterSpacing:'0.06em', textTransform:'uppercase',
+            }}>
+              <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--signal)', boxShadow:'0 0 6px var(--signal)', display:'inline-block' }}/>
+              Demo Mode
+            </div>
+          )}
+          {!isDemo && jobId && (
             <div style={{
               display:'inline-block', fontFamily:"'IBM Plex Mono',monospace", fontSize:12,
               color:'var(--mist)', background:'rgba(255,255,255,0.04)',
@@ -703,11 +795,11 @@ function WorkspaceDashboard() {
 
             {/* Country Analysis */}
             {Object.keys(job.country_stats).length > 0 && (
-              <CountryAnalysisSection countryStats={job.country_stats}/>
+              <CountryAnalysisSection countryStats={job.country_stats} countryNames={countryNames}/>
             )}
 
             {/* AI Insights */}
-            {report && <AIInsightsSection report={report} qualityScore={qualityScore??0}/>}
+            {report && <AIInsightsSection report={report} qualityScore={qualityScore??0} countryNames={countryNames}/>}
 
             {/* Downloads */}
             {downloads && <DownloadCenter downloads={downloads}/>}

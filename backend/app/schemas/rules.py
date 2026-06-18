@@ -8,6 +8,7 @@ class RuleCreate(msgspec.Struct):
     country_name: str
     phone_regex: str
     date_format: str
+    valid_payment_modes: Optional[list] = None
     is_active: bool = True
 
 class RuleUpdate(msgspec.Struct):
@@ -15,6 +16,7 @@ class RuleUpdate(msgspec.Struct):
     country_name: Optional[str] = None
     phone_regex: Optional[str] = None
     date_format: Optional[str] = None
+    valid_payment_modes: Optional[list] = None
     is_active: Optional[bool] = None
 
 class RuleResponse(msgspec.Struct):
@@ -24,4 +26,5 @@ class RuleResponse(msgspec.Struct):
     country_name: str
     phone_regex: str
     date_format: str
+    valid_payment_modes: Optional[list]
     is_active: bool

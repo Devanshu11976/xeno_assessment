@@ -18,16 +18,74 @@ const SUB_METRICS = [
     },
 ]
 
-export default function Metrics() {
+interface MetricsProps {
+    jobs?: any[]
+}
+
+export default function Metrics({ jobs = [] }: MetricsProps) {
     const ref = useRef<HTMLDivElement>(null)
     const isInView = useInView(ref, { once: true, margin: '-20% 0px' })
     const [display, setDisplay] = useState('0.00%')
     const animStarted = useRef(false)
 
+    const completedJobs = jobs.filter(j => j.status === 'completed')
+
+    const totalRecords = completedJobs.reduce((acc, j) => acc + (j.total_records ?? 0), 0)
+    const totalValid = completedJobs.reduce((acc, j) => acc + (j.valid_records ?? 0), 0)
+    const accuracy = totalRecords > 0 ? (totalValid / totalRecords) * 100 : 99.97
+
+    let peakThroughput = 0
+    completedJobs.forEach(j => {
+        if (j.total_records && j.processing_time_ms && j.processing_time_ms > 0) {
+            const min = j.processing_time_ms / 60000
+            const tp = j.total_records / min
+            if (tp > peakThroughput) peakThroughput = tp
+        }
+    })
+    const throughputStr = peakThroughput > 0
+        ? (peakThroughput >= 1000000 
+            ? `${(peakThroughput / 1000000).toFixed(1)}M rows/min` 
+            : `${Math.round(peakThroughput).toLocaleString()} rows/min`)
+        : '2.1M rows/min'
+
+    const sumLatency = completedJobs.reduce((acc, j) => acc + (j.processing_time_ms ?? 0), 0)
+    const avgLatency = completedJobs.length > 0 ? sumLatency / completedJobs.length : 0
+    const latencyStr = avgLatency > 0
+        ? (avgLatency < 1000 
+            ? `${Math.round(avgLatency)}ms` 
+            : `${(avgLatency / 1000).toFixed(2)}s`)
+        : '<400ms'
+
+    const volumeStr = totalRecords > 0
+        ? (totalRecords >= 1000000 
+            ? `${(totalRecords / 1000000).toFixed(1)}M+` 
+            : (totalRecords >= 1000 
+                ? `${(totalRecords / 1000).toFixed(1)}K+` 
+                : `${totalRecords}`))
+        : '40M+'
+
+    const displaySubMetrics = [
+        {
+            value: throughputStr,
+            label: 'sustained streaming throughput on a single worker pool',
+        },
+        {
+            value: latencyStr,
+            label: 'average validation latency per batch, end to end',
+        },
+        {
+            value: volumeStr,
+            label: 'transactions validated since deployment',
+        },
+    ]
+
+    const accuracyRef = useRef(accuracy)
+    accuracyRef.current = accuracy
+
     useEffect(() => {
         if (!isInView || animStarted.current) return
         animStarted.current = true
-        const target = 99.97
+        const target = accuracyRef.current
         const start = performance.now()
         const duration = 1400
         const tick = (now: number) => {
@@ -101,7 +159,7 @@ export default function Metrics() {
                         paddingTop: 40,
                     }}
                 >
-                    {SUB_METRICS.map((m) => (
+                    {displaySubMetrics.map((m) => (
                         <div key={m.value}>
                             <b
                                 style={{
