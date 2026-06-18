@@ -24,6 +24,7 @@ The Xeno backend requires two services on Railway:
 - **Root Directory**: `backend`
 - **Build Command**: (Auto-detected from Dockerfile)
 - **Start Command**: (Auto-detected from Dockerfile) - uses default CMD
+- **Health Check**: In Railway dashboard, set health check path to `/api/docs` (only for API service)
 - **Environment Variables**:
   - `ENV`: `production`
   - `DEBUG`: `false`
@@ -44,6 +45,7 @@ The Xeno backend requires two services on Railway:
 - **Root Directory**: `backend`
 - **Build Command**: (Auto-detected from Dockerfile)
 - **Start Command**: `python start_worker.py`
+- **Health Check**: ⚠️ **DISABLED** - Worker is a background process with no HTTP endpoints
 - **Environment Variables**: Same as API service (all required for DB access, Redis, etc.)
 
 ## Setup Steps
