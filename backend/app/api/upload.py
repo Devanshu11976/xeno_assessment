@@ -358,7 +358,14 @@ class UploadController(Controller):
                     # Supabase storage path
                     try:
                         clean_url = storage_service.generate_signed_url(job.clean_file_path, expires_in=3600)
-                        logger.info(f"Job {job_id}: Clean file from Supabase: {job.clean_file_path}, url={clean_url}")
+                        # Try to get file size from Supabase metadata
+                        try:
+                            clean_sz = storage_service.get_file_size(job.clean_file_path)
+                        except Exception:
+                            clean_sz = None
+                        # Record count not available from Supabase without downloading, use job.valid_records
+                        clean_rc = job.valid_records
+                        logger.info(f"Job {job_id}: Clean file from Supabase: {job.clean_file_path}, url={clean_url}, size={clean_sz}")
                     except Exception as e:
                         logger.error(f"Job {job_id}: Failed to generate signed URL for clean file: {e}")
             else:
@@ -381,7 +388,14 @@ class UploadController(Controller):
                     # Supabase storage path
                     try:
                         error_url = storage_service.generate_signed_url(job.error_report_path, expires_in=3600)
-                        logger.info(f"Job {job_id}: Error file from Supabase: {job.error_report_path}, url={error_url}")
+                        # Try to get file size from Supabase metadata
+                        try:
+                            error_sz = storage_service.get_file_size(job.error_report_path)
+                        except Exception:
+                            error_sz = None
+                        # Record count not available from Supabase without downloading, use job.invalid_records
+                        error_rc = job.invalid_records
+                        logger.info(f"Job {job_id}: Error file from Supabase: {job.error_report_path}, url={error_url}, size={error_sz}")
                     except Exception as e:
                         logger.error(f"Job {job_id}: Failed to generate signed URL for error file: {e}")
             else:

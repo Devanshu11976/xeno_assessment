@@ -215,5 +215,31 @@ class StorageService:
         except Exception as e:
             logger.error(f"Failed to cleanup temporary file {local_path}: {e}")
 
+    def get_file_size(self, storage_path: str) -> Optional[int]:
+        """
+        Get file size from Supabase Storage metadata.
+        
+        Args:
+            storage_path: Path in Supabase Storage
+            
+        Returns:
+            File size in bytes, or None if unavailable
+        """
+        if not self.supabase:
+            return None
+        
+        try:
+            # Get file metadata from Supabase
+            response = self.supabase.storage.from_(settings.supabase_bucket_name).get_metadata(
+                [storage_path]
+            )
+            if response and len(response) > 0:
+                # Supabase returns metadata with size in bytes
+                return response[0].get("metadata", {}).get("size") or response[0].get("size")
+        except Exception as e:
+            logger.warning(f"Failed to get file size for {storage_path}: {e}")
+        
+        return None
+
 
 storage_service = StorageService()
