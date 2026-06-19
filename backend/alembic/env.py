@@ -44,7 +44,12 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = create_engine(DB_URL, poolclass=pool.NullPool)
+    # Add connect_timeout to fail fast on connection issues instead of hanging indefinitely
+    connectable = create_engine(
+        DB_URL,
+        poolclass=pool.NullPool,
+        connect_args={"connect_timeout": 10}  # Fail fast if DB is unreachable
+    )
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
