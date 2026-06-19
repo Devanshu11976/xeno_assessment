@@ -82,11 +82,13 @@ class ValidationService:
         try:
             if file_ext == ".csv":
                 # Use scan_csv for lazy evaluation — only collect() when needed
-                lf = pl.scan_csv(file_path, infer_schema_length=0)
+                # Force phone_number column to be read as string to prevent scientific notation
+                lf = pl.scan_csv(file_path, infer_schema_length=0, dtypes={"phone_number": pl.Utf8, "customer_phone": pl.Utf8})
                 df = lf.collect()
             elif file_ext in (".xlsx", ".xls"):
                 # fastexcel does not support lazy scan; read fully but streaming-friendly
-                df = pl.read_excel(file_path, infer_schema_length=0)
+                # Force phone_number column to be read as string to prevent scientific notation
+                df = pl.read_excel(file_path, infer_schema_length=0, dtypes={"phone_number": pl.Utf8, "customer_phone": pl.Utf8})
             else:
                 raise ValueError(f"Unsupported file extension: {file_ext}")
         except Exception as e:
