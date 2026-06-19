@@ -54,6 +54,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
+    dockerCommand: sh -c "while true; do python start_worker.py; echo 'Worker exited, restarting in 5 seconds...'; sleep 5; done"
     envVars:
       - key: RQ_WORKER
         value: true

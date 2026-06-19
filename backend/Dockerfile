@@ -29,9 +29,9 @@ COPY . .
 # Make startup scripts executable
 RUN chmod +x start_worker.py 2>/dev/null || true
 
-# Expose Litestar default port
+# Expose Litestar default port (only used by API service, not worker)
 EXPOSE 8000
 
 # Check if this is a worker deployment by checking for RQ_WORKER environment variable
 # If set, run the worker; otherwise run the API with migrations
-CMD sh -c "if [ \"$RQ_WORKER\" = \"true\" ]; then python start_worker.py; else alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000; fi"
+CMD sh -c "if [ \"$RQ_WORKER\" = \"true\" ]; then python start_worker.py; else alembic upgrade head && python main.py; fi"

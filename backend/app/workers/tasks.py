@@ -216,6 +216,13 @@ async def _mark_failed(job_id: str, error_msg: str) -> None:
 
 
 if __name__ == "__main__":
-    redis_conn = Redis.from_url(settings.REDIS_URL)
+    redis_conn = Redis.from_url(
+        settings.REDIS_URL,
+        socket_keepalive=True,
+        socket_keepalive_options={},
+        socket_timeout=None,
+        socket_connect_timeout=10,
+        health_check_interval=30
+    )
     worker = Worker([Queue("default", connection=redis_conn)], connection=redis_conn)
     worker.work(with_scheduler=True)

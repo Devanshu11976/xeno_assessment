@@ -10,7 +10,14 @@ from app.config.settings import settings
 
 def main():
     """Start RQ worker to process background tasks"""
-    redis_conn = Redis.from_url(settings.REDIS_URL)
+    redis_conn = Redis.from_url(
+        settings.REDIS_URL,
+        socket_keepalive=True,
+        socket_keepalive_options={},
+        socket_timeout=None,
+        socket_connect_timeout=10,
+        health_check_interval=30
+    )
     queue = Queue("default", connection=redis_conn)
     
     worker = Worker([queue], connection=redis_conn)
