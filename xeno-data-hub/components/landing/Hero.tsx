@@ -33,8 +33,9 @@ function HeroComponent({ rulesCount = 0, jobs = [] }: HeroProps) {
     const router = useRouter()
 
     const activeJobs = jobs.filter(j => j.status === 'queued' || j.status === 'processing').length
-    const sumRecords = jobs.reduce((acc, j) => acc + (j.total_records ?? 0), 0)
-    const totalValid = jobs.reduce((acc, j) => acc + (j.valid_records ?? 0), 0)
+    const completedJobs = jobs.filter(j => j.status === 'completed')
+    const sumRecords = completedJobs.reduce((acc, j) => acc + (j.total_records ?? 0), 0)
+    const totalValid = completedJobs.reduce((acc, j) => acc + (j.valid_records ?? 0), 0)
 
     const formattedRecords = sumRecords > 0 
         ? (sumRecords >= 1000000 
