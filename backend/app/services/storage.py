@@ -189,13 +189,14 @@ class StorageService:
             logger.error(f"Failed to delete {storage_path} from Supabase: {e}")
             raise
 
-    def generate_signed_url(self, storage_path: str, expires_in: int = 3600) -> str:
+    def generate_signed_url(self, storage_path: str, expires_in: int = 3600, download_filename: Optional[str] = None) -> str:
         """
         Generate a signed URL for temporary access to a file.
         
         Args:
             storage_path: Path in Supabase Storage
             expires_in: URL expiration time in seconds (default: 1 hour)
+            download_filename: Optional filename to use for download (adds 'download' parameter)
             
         Returns:
             Signed URL string
@@ -211,7 +212,13 @@ class StorageService:
                 storage_path, expires_in
             )
             signed_url = response.get("signedURL")
-            logger.info(f"Generated signed URL for {storage_path}")
+            
+            # Add download parameter to specify filename
+            if download_filename:
+                separator = "&" if "?" in signed_url else "?"
+                signed_url = f"{signed_url}{separator}download={download_filename}"
+            
+            logger.info(f"Generated signed URL for {storage_path} with download={download_filename}")
             return signed_url
         except Exception as e:
             logger.error(f"Failed to generate signed URL for {storage_path}: {e}")

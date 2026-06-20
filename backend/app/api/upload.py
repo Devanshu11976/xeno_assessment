@@ -375,7 +375,7 @@ class UploadController(Controller):
                 else:
                     # Supabase storage path
                     try:
-                        clean_url = storage_service.generate_signed_url(job.clean_file_path, expires_in=3600)
+                        clean_url = storage_service.generate_signed_url(job.clean_file_path, expires_in=3600, download_filename="clean.csv")
                         # Try to get file size from Supabase metadata
                         try:
                             clean_sz = storage_service.get_file_size(job.clean_file_path)
@@ -405,7 +405,7 @@ class UploadController(Controller):
                 else:
                     # Supabase storage path
                     try:
-                        error_url = storage_service.generate_signed_url(job.error_report_path, expires_in=3600)
+                        error_url = storage_service.generate_signed_url(job.error_report_path, expires_in=3600, download_filename="errors.csv")
                         # Try to get file size from Supabase metadata
                         try:
                             error_sz = storage_service.get_file_size(job.error_report_path)

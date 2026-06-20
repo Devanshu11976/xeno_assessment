@@ -315,8 +315,17 @@ function DownloadCard({ icon, label, accent, url, recordCount, fileSizeBytes }: 
         const match = disposition.match(/filename="?([^";\n]+)"?/)
         if (match) filename = match[1]
       } else {
-        const parts = url.split('/')
-        filename = parts[parts.length - 1] + '.csv'
+        // Fallback: generate clean filename based on label
+        const date = new Date().toISOString().split('T')[0]
+        if (label === 'Clean Dataset') {
+          filename = `clean_${date}.csv`
+        } else if (label === 'Error Report') {
+          filename = `errors_${date}.csv`
+        } else if (label.startsWith('Chunk')) {
+          filename = `chunk_${date}.csv`
+        } else {
+          filename = `export_${date}.csv`
+        }
       }
       const a = document.createElement('a')
       a.href = blobUrl
