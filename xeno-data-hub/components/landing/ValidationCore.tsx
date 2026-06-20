@@ -450,7 +450,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                     posAttr.needsUpdate = true
                     colorAttr.needsUpdate = true
 
-                    material.size = (0.16 + currentIntensity * 0.14) * oneMinusOrderFactor * 0.3
+                    material.size = (0.16 + currentIntensity * 0.14) * oneMinusOrderFactor
 
                     camera.position.x += (mouseX * 2 - camera.position.x) * 0.02
                     camera.position.y += (-mouseY * 1.4 - camera.position.y) * 0.02
