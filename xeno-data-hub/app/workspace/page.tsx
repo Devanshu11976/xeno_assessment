@@ -463,7 +463,7 @@ function AIInsightsSection({ report, qualityScore, countryNames }: { report: AIR
           </div>
 
           {/* Highest error region */}
-          {highestErrorRegion && (
+          {highestErrorRegion && highestErrorRegion !== 'XX' && (
             <div style={{
               background:'rgba(248,113,113,0.05)', border:'1px solid rgba(248,113,113,0.2)',
               borderRadius:14, padding:'12px 16px',
@@ -472,7 +472,7 @@ function AIInsightsSection({ report, qualityScore, countryNames }: { report: AIR
                 Highest Error Region
               </div>
               <div style={{ fontSize:14, fontWeight:600, color:'#f87171', fontFamily:"'Space Grotesk',sans-serif" }}>
-                {countryNames[highestErrorRegion] ?? highestErrorRegion}
+                {(highestErrorRegion && highestErrorRegion !== 'XX') ? (countryNames[highestErrorRegion] ?? highestErrorRegion) : 'Unknown'}
               </div>
             </div>
           )}
@@ -512,10 +512,10 @@ function AIInsightsSection({ report, qualityScore, countryNames }: { report: AIR
               const pct = Math.round((e.count/maxCount)*100)
               return (
                 <div key={i} style={{
-                  padding:'10px 14px', borderRadius:10,
-                  background:'rgba(255,255,255,0.025)', border:'1px solid var(--line-soft)',
-                  overflow:'hidden',
-                }}>
+                padding:'10px 14px', borderRadius:10,
+                background:'rgba(255,255,255,0.025)', border:'1px solid var(--line-soft)',
+                overflow:'hidden',
+              }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                     <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                       <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:'var(--signal)', background:'rgba(255,184,0,0.1)', padding:'2px 6px', borderRadius:4 }}>
