@@ -41,6 +41,7 @@ class JobDetailsResponse(msgspec.Struct):
     country_stats: dict[str, CountryStatEntry]
     # Error type distribution from validation_breakdown
     validation_breakdown: dict[str, int]
+    error_message: Optional[str] = None
 
 
 class DownloadLinksResponse(msgspec.Struct):

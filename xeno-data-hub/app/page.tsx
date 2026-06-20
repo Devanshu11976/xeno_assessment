@@ -84,18 +84,26 @@ const INDUSTRY_CARDS: {
 function SpotlightLabel({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLSpanElement>(null)
   const glowRef = useRef<HTMLSpanElement>(null)
+  const rectRef = useRef<DOMRect | null>(null)
   const [hovered, setHovered] = useState(false)
 
+  const onMouseEnter = () => {
+    setHovered(true)
+    if (ref.current) {
+      rectRef.current = ref.current.getBoundingClientRect()
+    }
+  }
+
   const onMove = (e: React.MouseEvent<HTMLSpanElement>) => {
-    if (!ref.current || !glowRef.current) return
-    const rect = ref.current.getBoundingClientRect()
+    if (!rectRef.current || !glowRef.current) return
+    const rect = rectRef.current
     glowRef.current.style.background = `radial-gradient(ellipse 100px 70px at ${e.clientX - rect.left}px ${e.clientY - rect.top}px, rgba(76,141,255,0.20) 0%, rgba(155,107,255,0.11) 55%, transparent 80%)`
   }
 
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={onMouseEnter}
       onMouseLeave={() => setHovered(false)}
       onMouseMove={onMove}
       style={{ position: 'relative', display: 'inline', color: 'var(--paper)', fontWeight: 600 }}
@@ -549,6 +557,7 @@ interface RuleItem {
 }
 
 export default function Page() {
+  const spotlightRef = useRef<HTMLDivElement>(null)
   const [stats, setStats] = useState<{
     active_jobs: number
     country_rule_count: number
@@ -611,13 +620,13 @@ export default function Page() {
 
   /* Mouse spotlight */
   useEffect(() => {
+    const spotlight = spotlightRef.current
     const onMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth) * 100
-      const y = (e.clientY / window.innerHeight) * 100
-      document.documentElement.style.setProperty('--mx', x + '%')
-      document.documentElement.style.setProperty('--my', y + '%')
+      if (spotlight) {
+        spotlight.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(155,107,255,0.10), transparent 60%)`
+      }
     }
-    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mousemove', onMove, { passive: true })
     return () => window.removeEventListener('mousemove', onMove)
   }, [])
 
@@ -638,9 +647,10 @@ export default function Page() {
       {/* Fixed background layers */}
       <div className="bg-grid" />
       <div
+        ref={spotlightRef}
         className="spotlight"
         style={{
-          background: `radial-gradient(600px circle at var(--mx) var(--my), rgba(155,107,255,0.10), transparent 60%)`,
+          background: `radial-gradient(600px circle at 50% 50%, rgba(155,107,255,0.10), transparent 60%)`,
         }}
       />
 

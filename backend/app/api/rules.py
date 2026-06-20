@@ -25,6 +25,14 @@ class RulesController(Controller):
                 date_format=r.date_format,
                 valid_payment_modes=r.valid_payment_modes,
                 is_active=r.is_active,
+                valid_currencies=r.valid_currencies,
+                min_amount=r.min_amount,
+                max_amount=r.max_amount,
+                min_quantity=r.min_quantity,
+                max_quantity=r.max_quantity,
+                allow_future_dates=r.allow_future_dates,
+                required_fields=r.required_fields,
+                email_domain_whitelist=r.email_domain_whitelist,
             )
             for r in rules
         ]
@@ -46,6 +54,14 @@ class RulesController(Controller):
             date_format=data.date_format,
             valid_payment_modes=data.valid_payment_modes,
             is_active=data.is_active,
+            valid_currencies=data.valid_currencies,
+            min_amount=data.min_amount,
+            max_amount=data.max_amount,
+            min_quantity=data.min_quantity,
+            max_quantity=data.max_quantity,
+            allow_future_dates=data.allow_future_dates,
+            required_fields=data.required_fields,
+            email_domain_whitelist=data.email_domain_whitelist,
         )
         await repo.create(rule)
         await session.commit()
@@ -57,6 +73,14 @@ class RulesController(Controller):
             date_format=rule.date_format,
             valid_payment_modes=rule.valid_payment_modes,
             is_active=rule.is_active,
+            valid_currencies=rule.valid_currencies,
+            min_amount=rule.min_amount,
+            max_amount=rule.max_amount,
+            min_quantity=rule.min_quantity,
+            max_quantity=rule.max_quantity,
+            allow_future_dates=rule.allow_future_dates,
+            required_fields=rule.required_fields,
+            email_domain_whitelist=rule.email_domain_whitelist,
         )
 
     @put(path="/{rule_id:uuid}")
@@ -75,6 +99,22 @@ class RulesController(Controller):
             rule.valid_payment_modes = data.valid_payment_modes
         if data.is_active is not None:
             rule.is_active = data.is_active
+        if data.valid_currencies is not None:
+            rule.valid_currencies = data.valid_currencies
+        if data.min_amount is not None:
+            rule.min_amount = data.min_amount
+        if data.max_amount is not None:
+            rule.max_amount = data.max_amount
+        if data.min_quantity is not None:
+            rule.min_quantity = data.min_quantity
+        if data.max_quantity is not None:
+            rule.max_quantity = data.max_quantity
+        if data.allow_future_dates is not None:
+            rule.allow_future_dates = data.allow_future_dates
+        if data.required_fields is not None:
+            rule.required_fields = data.required_fields
+        if data.email_domain_whitelist is not None:
+            rule.email_domain_whitelist = data.email_domain_whitelist
         await session.flush()
         await session.commit()
         return RuleResponse(
@@ -85,6 +125,14 @@ class RulesController(Controller):
             date_format=rule.date_format,
             valid_payment_modes=rule.valid_payment_modes,
             is_active=rule.is_active,
+            valid_currencies=rule.valid_currencies,
+            min_amount=rule.min_amount,
+            max_amount=rule.max_amount,
+            min_quantity=rule.min_quantity,
+            max_quantity=rule.max_quantity,
+            allow_future_dates=rule.allow_future_dates,
+            required_fields=rule.required_fields,
+            email_domain_whitelist=rule.email_domain_whitelist,
         )
 
     @delete(path="/{rule_id:uuid}")

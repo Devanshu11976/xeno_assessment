@@ -10,19 +10,25 @@ import { EASE_OUT, motionDuration } from '@/lib/motion'
 function SpotlightLabel({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLSpanElement>(null)
   const glowRef = useRef<HTMLSpanElement>(null)
+  const cachedRect = useRef<DOMRect | null>(null)
   const [hovered, setHovered] = useState(false)
 
+  const onEnter = () => {
+    if (ref.current) cachedRect.current = ref.current.getBoundingClientRect()
+    setHovered(true)
+  }
+
   const onMove = (e: React.MouseEvent<HTMLSpanElement>) => {
-    if (!ref.current || !glowRef.current) return
-    const rect = ref.current.getBoundingClientRect()
+    if (!glowRef.current || !cachedRect.current) return
+    const rect = cachedRect.current
     glowRef.current.style.background = `radial-gradient(ellipse 110px 70px at ${e.clientX - rect.left}px ${e.clientY - rect.top}px, rgba(76,141,255,0.18) 0%, rgba(155,107,255,0.10) 55%, transparent 80%)`
   }
 
   return (
     <span
       ref={ref}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={onEnter}
+      onMouseLeave={() => { setHovered(false); cachedRect.current = null }}
       onMouseMove={onMove}
       style={{ position: 'relative', display: 'inline' }}
     >
@@ -364,19 +370,28 @@ export default function Pipeline() {
     const measure = () => {
       const rect = wrap.getBoundingClientRect()
       cachedHeight = rect.height
-      cachedTop = rect.top
+      // Cache the absolute position relative to document
+      cachedTop = rect.top + window.scrollY
     }
 
     const updateComet = () => {
       if (!cometRef.current) return
-      const viewportCenter = window.innerHeight * 0.5
+      const viewportCenter = window.scrollY + (window.innerHeight * 0.5)
+      // Calculate progress using cached values and window.scrollY
       let progress = (viewportCenter - cachedTop) / cachedHeight
       progress = Math.max(0, Math.min(1, progress))
       cometRef.current.style.top = `${progress * cachedHeight}px`
       ticking = false
     }
 
-    const onScrollOrResize = () => {
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(updateComet)
+      }
+    }
+
+    const onResize = () => {
       measure()
       if (!ticking) {
         ticking = true
@@ -386,11 +401,11 @@ export default function Pipeline() {
 
     measure()
     updateComet()
-    window.addEventListener('scroll', onScrollOrResize, { passive: true })
-    window.addEventListener('resize', onScrollOrResize, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onResize, { passive: true })
     return () => {
-      window.removeEventListener('scroll', onScrollOrResize)
-      window.removeEventListener('resize', onScrollOrResize)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onResize)
     }
   }, [])
 

@@ -53,9 +53,28 @@ def _is_valid_phone(phone_val: str, phone_regex: str) -> bool:
     return bool(re.match(phone_regex, phone_val.strip()))
 
 
-def _is_valid_date(date_val: str) -> bool:
+def _is_valid_date(date_val: str, date_format: Optional[str] = None) -> bool:
     from datetime import datetime
-    # Try common date formats, with ISO (YYYY-MM-DD) first as fallback
+    if date_format:
+        # Check specific configured format first
+        strptime_fmt = date_format.replace("YYYY", "%Y").replace("YY", "%y").replace("MM", "%m").replace("DD", "%d")
+        try:
+            parsed = datetime.strptime(date_val, strptime_fmt)
+            if parsed.month <= 12 and parsed.day <= 31:
+                return True
+        except ValueError:
+            pass
+        # Fallback: if it's in standard ISO format, accept it as ISO is universally standard
+        if date_format.upper() != "YYYY-MM-DD":
+            try:
+                parsed = datetime.strptime(date_val, "%Y-%m-%d")
+                if parsed.month <= 12 and parsed.day <= 31:
+                    return True
+            except ValueError:
+                pass
+        return False
+
+    # General fallback to try common date formats
     date_formats = [
         "%Y-%m-%d",  # ISO format - always accept
         "%d/%m/%Y",  # DD/MM/YYYY
@@ -216,11 +235,17 @@ class ValidationService:
             "invalid_phone": 0,
             "invalid_date": 0,
             "invalid_payment_mode": 0,
-            "duplicate_order_id": 0,
+            "duplicate_record": 0,
             "negative_quantity": 0,
             "negative_amount": 0,
             "missing_fields": 0,
             "pandera_schema": 0,
+            "invalid_email": 0,
+            "invalid_name": 0,
+            "invalid_country": 0,
+            "invalid_currency": 0,
+            "invalid_time": 0,
+            "future_date": 0,
         }
         country_stats: dict[str, dict[str, int]] = {}
 
@@ -369,7 +394,7 @@ class ValidationService:
             # Date
             if row.get("transaction_date"):
                 date_val = str(row["transaction_date"]).strip()
-                if not _is_valid_date(date_val):
+                if not _is_valid_date(date_val, row_rule.date_format if row_rule else None):
                     row_errors.append({
                         "row_number": row_idx + 1,
                         "column_name": "transaction_date",
@@ -381,20 +406,35 @@ class ValidationService:
                     # Check for future dates if not allowed
                     if row_rule and not row_rule.allow_future_dates:
                         try:
-                            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d.%m.%Y"):
+                            # Resolve target parse format
+                            resolved_fmt = None
+                            if row_rule:
+                                strptime_fmt = row_rule.date_format.replace("YYYY", "%Y").replace("YY", "%y").replace("MM", "%m").replace("DD", "%d")
                                 try:
-                                    parsed_date = datetime.strptime(date_val, fmt)
-                                    if parsed_date > datetime.now():
-                                        row_errors.append({
-                                            "row_number": row_idx + 1,
-                                            "column_name": "transaction_date",
-                                            "error_message": f"Date '{date_val}' is in the future",
-                                            "error_type": "future_date",
-                                        })
-                                        breakdown["future_date"] = breakdown.get("future_date", 0) + 1
-                                    break
+                                    datetime.strptime(date_val, strptime_fmt)
+                                    resolved_fmt = strptime_fmt
                                 except ValueError:
-                                    continue
+                                    pass
+                            if not resolved_fmt:
+                                # Fallback to check common date formats
+                                for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d.%m.%Y"):
+                                    try:
+                                        datetime.strptime(date_val, fmt)
+                                        resolved_fmt = fmt
+                                        break
+                                    except ValueError:
+                                        continue
+                            
+                            if resolved_fmt:
+                                parsed_date = datetime.strptime(date_val, resolved_fmt)
+                                if parsed_date > datetime.now():
+                                    row_errors.append({
+                                        "row_number": row_idx + 1,
+                                        "column_name": "transaction_date",
+                                        "error_message": f"Date '{date_val}' is in the future",
+                                        "error_type": "future_date",
+                                    })
+                                    breakdown["future_date"] += 1
                         except Exception:
                             pass
 

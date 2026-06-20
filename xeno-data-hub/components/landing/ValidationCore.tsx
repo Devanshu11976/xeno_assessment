@@ -71,7 +71,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
         const cBlue = { r: 76 / 255, g: 141 / 255, b: 255 / 255 }
         const cPurple = { r: 155 / 255, g: 107 / 255, b: 255 / 255 }
         const cGold = { r: 245 / 255, g: 176 / 255, b: 66 / 255 }
-        const animSpeed = 0.825 // Increased by 1.5x from 0.55 for faster particle motion
+        const animSpeed = 1.1 // Increased to 2x from original 0.55
 
         const waitForDimensions = (): Promise<{ w: number; h: number }> => {
             return new Promise((resolve) => {
@@ -243,6 +243,17 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                 const heroSection = canvas.parentElement
                 let lastScrollY = 0
                 let scrollThrottleTimer: ReturnType<typeof setTimeout> | null = null
+                let cachedHeroTop = 0
+                let cachedHeroHeight = 0
+
+                const measureHero = () => {
+                    if (!heroSection) return
+                    const rect = heroSection.getBoundingClientRect()
+                    cachedHeroTop = rect.top + window.scrollY  // convert to page-space offset
+                    cachedHeroHeight = rect.height
+                }
+
+                measureHero()
 
                 const onScroll = () => {
                     if (!heroSection) return
@@ -252,7 +263,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                     if (Math.abs(currentScrollY - lastScrollY) < 5 && scrollThrottleTimer) return
                     lastScrollY = currentScrollY
                     
-                    if (window.scrollY < 60) {
+                    if (currentScrollY < 60) {
                         targetOrder = 0
                         return
                     }
@@ -261,15 +272,15 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                     if (!scrollThrottleTimer) {
                         scrollThrottleTimer = setTimeout(() => {
                             scrollThrottleTimer = null
-                            if (disposed || !heroSection) return
-                            const rect = heroSection.getBoundingClientRect()
-                            if (rect.height <= 0) return
+                            if (disposed || !heroSection || cachedHeroHeight <= 0) return
+                            // Use cached hero dimensions — no getBoundingClientRect here
+                            const relativeTop = cachedHeroTop - window.scrollY
                             const progress = Math.min(
                                 1,
-                                Math.max(0, -rect.top / (rect.height * 0.6))
+                                Math.max(0, -relativeTop / (cachedHeroHeight * 0.6))
                             )
                             if (!isNaN(progress)) targetOrder = progress
-                        }, 50) // Reduced from 150ms to 50ms for better responsiveness
+                        }, 50)
                     }
                 }
 
@@ -303,6 +314,7 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
 
                 const onResize = () => {
                     needsLayoutRefresh = true
+                    measureHero()  // Re-cache hero section dimensions on resize
                 }
                 window.addEventListener('resize', onResize, { passive: true })
                 removeResize = () => window.removeEventListener('resize', onResize)

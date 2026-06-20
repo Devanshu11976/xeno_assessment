@@ -54,6 +54,17 @@ def process_dataset_task(job_id: str, storage_path: str, country_code: str) -> N
                 storage_service.cleanup_temp_file(local_file_path)
             except Exception as cleanup_exc:
                 logger.error(f"Failed to cleanup temp file {local_file_path}: {cleanup_exc}")
+        
+        # Cleanup entire local outputs directory
+        try:
+            from app.services.storage import storage_service
+            job_out_dir = storage_service.get_job_output_dir(job_id)
+            if job_out_dir.exists():
+                import shutil
+                shutil.rmtree(job_out_dir)
+                logger.info(f"Cleaned up local output directory: {job_out_dir}")
+        except Exception as cleanup_exc:
+            logger.error(f"Failed to cleanup output directory for job {job_id}: {cleanup_exc}")
 
 
 async def _process_async(job_id: str, storage_path: str, country_code: str) -> str:
@@ -215,6 +226,7 @@ async def _mark_failed(job_id: str, error_msg: str) -> None:
         job = await repo.get_by_id(job_id)
         if job:
             job.status = "failed"
+            job.validation_breakdown = {"error_message": error_msg}
             await session.flush()
 
 

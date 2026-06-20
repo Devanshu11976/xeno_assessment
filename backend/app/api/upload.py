@@ -265,6 +265,7 @@ class UploadController(Controller):
             processing_time_ms=job.processing_time_ms,
             country_stats=country_stat_entries,
             validation_breakdown=error_type_bd,
+            error_message=raw_bd.get("error_message"),
         )
 
     # ── GET /api/jobs/{job_id}/status ─────────────────────────────────────
