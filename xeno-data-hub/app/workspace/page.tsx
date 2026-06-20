@@ -809,11 +809,10 @@ function WorkspaceDashboard() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 16,
-                  padding: '20px',
+                  gap: 8,
+                  padding: '24px 20px',
                   background: 'rgba(255,255,255,0.02)',
                   borderRadius: 16,
-                  overflow: 'visible',
                   position: 'relative',
                 }}>
                   {[
@@ -823,35 +822,12 @@ function WorkspaceDashboard() {
                     { label: 'Validator', icon: '✓', color: '#10b981' },
                     { label: 'Output', icon: '📦', color: 'var(--mist)' },
                   ].map((step, i) => (
-                    <div key={step.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 100, position: 'relative' }}>
-                      {/* Animated connecting line between steps */}
-                      {i < 4 && (
+                    <div key={step.label} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, flex: 1 }}>
                         <div style={{
-                          position: 'absolute',
-                          left: 'calc(100% + 8px)',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          width: '32px',
-                          height: '2px',
-                          background: 'var(--line)',
-                          zIndex: 0,
-                        }}>
-                          <div style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            height: '100%',
-                            width: '100%',
-                            background: 'linear-gradient(90deg, var(--refine), var(--signal))',
-                            animation: 'flowPulse 2s ease-in-out infinite',
-                          }}/>
-                        </div>
-                      )}
-                      {/* Step icon container with border */}
-                      <div style={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: 14,
+                        width: 60,
+                        height: 60,
+                        borderRadius: 16,
                         background: step.label === 'Validator' 
                           ? `rgba(16, 185, 129, 0.15)` 
                           : `${step.color}08`,
@@ -878,34 +854,38 @@ function WorkspaceDashboard() {
                   ))}
                 </div>
                 <div style={{
-                  marginTop: 16,
-                  padding: 12,
-                  background: 'rgba(255,255,255,0.02)',
-                  borderRadius: 8,
+                  marginTop: 14,
+                  padding: '12px 16px',
+                  background: 'rgba(255,255,255,0.015)',
+                  borderRadius: 10,
                   fontSize: 12,
                   color: 'var(--mist-dim)',
                   lineHeight: 1.6,
                   display: 'flex',
                   flexWrap: 'wrap',
-                  gap: 8,
+                  gap: 6,
                   alignItems: 'center',
                 }}>
-                  <span style={{ color: 'var(--mist-dim)' }}>Flow:</span>
+                  <span style={{
+                    fontSize: 11,
+                    color: 'var(--mist-dim)',
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    marginRight: 4,
+                  }}>Flow:</span>
                   {['Upload file', 'Redis Queue (RQ)', 'Worker Process', 'Polars Validation', 'Clean/Error Output'].map((flowStep, i) => (
-                    <span key={flowStep} style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 12px',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid var(--line)',
-                      borderRadius: 20,
-                      fontSize: 11,
-                      color: 'var(--mist)',
-                      fontFamily: "'IBM Plex Mono', monospace',
-                    }}>
-                      {flowStep}
-                      {i < 4 && <span style={{ color: 'var(--mist-dim)' }}>→</span>}
+                    <span key={flowStep} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{
+                        padding: '4px 10px',
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid var(--line)',
+                        borderRadius: 20,
+                        fontSize: 11,
+                        color: 'var(--mist)',
+                        fontFamily: "'IBM Plex Mono', monospace',
+                      }}>
+                        {flowStep}
+                      </span>
+                      {i < 4 && <span style={{ color: 'var(--mist-dim)', fontSize: 11 }}>→</span>}
                     </span>
                   ))}
                 </div>
