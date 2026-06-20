@@ -185,7 +185,6 @@ function MetricCard({ label, rawValue, display, accent }: {
       borderRadius: 16, padding: '22px 18px', textAlign: 'center', flex: 1, minWidth: 120,
       transition: 'border-color 0.2s, background 0.2s',
     }}
-      data-cursor-hover
       onMouseEnter={e => {
         (e.currentTarget as HTMLDivElement).style.borderColor = accent;
         (e.currentTarget as HTMLDivElement).style.background = `${accent}0d`
@@ -245,7 +244,6 @@ function CountryAnalysisSection({ countryStats, countryNames }: { countryStats: 
                 transition: 'border-color 0.2s, background 0.2s, transform 0.2s',
                 cursor: 'default',
               }}
-              data-cursor-hover
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLDivElement
                 el.style.borderColor = col; el.style.background = `${col}0d`; el.style.transform = 'translateY(-2px)'
@@ -354,7 +352,6 @@ function DownloadCard({ icon, label, accent, url, recordCount, fileSizeBytes }: 
       cursor: isDemo ? 'default' : 'pointer',
       opacity: isDemo ? 0.6 : 1,
     }}
-      data-cursor-hover
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={!isDemo ? handleDownload : undefined}
@@ -569,7 +566,6 @@ function PerfTile({ label, value, sub }: { label: string; value: string; sub?: s
       borderRadius: 14, padding: '18px 16px', textAlign: 'center',
       transition: 'all 0.18s ease', transform: hov ? 'translateY(-2px)' : 'translateY(0)',
     }}
-      data-cursor-hover
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
       <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: 'var(--refine)', marginBottom: 4 }}>
         {value}
@@ -688,7 +684,6 @@ function WorkspaceDashboard() {
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', paddingTop: 100, paddingBottom: 80, paddingInline: 20, zIndex: 2 }}>
-      <CustomCursor />
       <div className="bg-grid" />
       <div className="spotlight" style={{ background: 'radial-gradient(800px circle at 50% 20%, rgba(155,107,255,0.07), transparent 60%)' }} />
 
@@ -832,9 +827,7 @@ function WorkspaceDashboard() {
                           fontSize: 26,
                           boxShadow: step.label === 'Validator' ? '0 0 18px rgba(16,185,129,0.3)' : 'none',
                           animation: step.label === 'Validator' ? 'pulseGlow 2s ease-in-out infinite' : 'none',
-                          cursor: 'default',
-                        }}
-                          data-cursor-hover>
+                        }}>
                           {step.icon}
                         </div>
                         <span style={{ fontSize: 12, color: step.label === 'Validator' ? '#10b981' : 'var(--mist)', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>
@@ -887,9 +880,7 @@ function WorkspaceDashboard() {
                         fontSize: 11,
                         color: 'var(--mist)',
                         fontFamily: "'IBM Plex Mono', monospace",
-                        cursor: 'default',
-                      }}
-                        data-cursor-hover>
+                      }}>
                         {flowStep}
                       </span>
                       {i < 4 && <span style={{ color: 'var(--mist-dim)', fontSize: 11 }}>→</span>}
@@ -923,7 +914,6 @@ function WorkspaceDashboard() {
                       transition: 'all 0.2s ease',
                       cursor: 'default',
                     }}
-                      data-cursor-hover
                       onMouseEnter={(e) => {
                         const el = e.currentTarget as HTMLDivElement
                         el.style.background = `${rule.color}0a`
@@ -1018,6 +1008,7 @@ function WorkspaceDashboard() {
 export default function WorkspacePage() {
   return (
     <>
+      <CustomCursor />
       <Navbar />
       <Suspense fallback={
         <div style={{

@@ -33,7 +33,7 @@ function HeroComponent({ rulesCount = 0, jobs = [] }: HeroProps) {
     const router = useRouter()
 
     const activeJobs = jobs.filter(j => j.status === 'queued' || j.status === 'processing').length
-    const completedJobs = jobs.filter(j => j.status === 'completed' && (j.total_records ?? 0) > 0)
+    const completedJobs = jobs.filter(j => j.status === 'completed')
     const sumRecords = completedJobs.reduce((acc, j) => acc + (j.total_records ?? 0), 0)
     const totalValid = completedJobs.reduce((acc, j) => acc + (j.valid_records ?? 0), 0)
 

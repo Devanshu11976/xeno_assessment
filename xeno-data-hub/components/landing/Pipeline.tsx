@@ -175,7 +175,6 @@ const VisualCard = ({
         scale: { duration: 0.4, ease: EASE_OUT },
         y: { type: 'spring', stiffness: 260, damping: 22 },
       }}
-      data-cursor-hover
       style={{
         height: 100,
         display: 'flex',
@@ -435,7 +434,7 @@ export default function Pipeline() {
         position: 'relative',
         zIndex: 2,
         paddingBlock: 'clamp(80px, 12vw, 160px)',
-        overflow: 'visible',
+        overflow: 'hidden',
         willChange: 'transform',
         transform: 'translateZ(0)',
       }}

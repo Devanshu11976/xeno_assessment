@@ -21,7 +21,7 @@ export default function Metrics({ jobs = [] }: MetricsProps) {
     const [display, setDisplay] = useState('0.00%')
     const animStarted = useRef(false)
 
-    const completedJobs = jobs.filter(j => j.status === 'completed' && (j.total_records ?? 0) > 0)
+    const completedJobs = jobs.filter(j => j.status === 'completed')
 
     const totalRecords = completedJobs.reduce((acc, j) => acc + (j.total_records ?? 0), 0)
     const totalValid = completedJobs.reduce((acc, j) => acc + (j.valid_records ?? 0), 0)
@@ -101,7 +101,6 @@ export default function Metrics({ jobs = [] }: MetricsProps) {
                 zIndex: 2,
                 paddingBlock: 'clamp(80px, 12vw, 160px)',
                 borderTop: '1px solid var(--line-soft)',
-                overflow: 'visible',
             }}
         >
             <div

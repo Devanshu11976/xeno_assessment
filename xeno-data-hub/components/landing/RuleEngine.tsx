@@ -50,7 +50,6 @@ const RuleValue = memo(function RuleValue({ value }: { value: string }) {
 
     return (
         <div
-            data-cursor-hover
             style={{
                 fontFamily: "'IBM Plex Mono', monospace",
                 fontSize: 12,
@@ -295,7 +294,6 @@ const RuleEngine = memo(function RuleEngine({ rules = [], onToggleRule }: RuleEn
                 zIndex: 2,
                 paddingBlock: 'clamp(80px, 12vw, 160px)',
                 borderTop: '1px solid var(--line-soft)',
-                overflow: 'visible',
                 willChange: 'transform',
                 transform: 'translateZ(0)',
             }}
