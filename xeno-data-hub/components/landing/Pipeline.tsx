@@ -547,8 +547,16 @@ export default function Pipeline() {
           .stage-row {
             grid-template-columns: 72px 1fr !important;
             gap: 20px !important;
+            paddingBlock: 32px !important;
           }
           .stage-visual { display: none !important; }
+        }
+        @media (max-width: 600px) {
+          .stage-row {
+            grid-template-columns: 60px 1fr !important;
+            gap: 16px !important;
+            paddingBlock: 28px !important;
+          }
         }
       `}</style>
     </section>

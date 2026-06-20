@@ -340,6 +340,9 @@ function HeroComponent({ rulesCount = 0, jobs = [] }: HeroProps) {
         @media (max-width: 768px) {
           .hero-badge { display: none !important; }
         }
+        @media (max-width: 600px) {
+          section { paddingTop: 100px !important; }
+        }
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }

@@ -138,14 +138,14 @@ export default function ValidationCore({ intensity = 0 }: ValidationCoreProps) {
                 const { w, h } = await waitForDimensions()
                 if (disposed) return
 
-                COUNT = w < 760 ? 175 : 450
+                COUNT = w < 600 ? 120 : (w < 760 ? 175 : 450)
 
                 scene = new THREE.Scene()
                 camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 100)
                 camera.position.z = 18
 
-                renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' })
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+                renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: w > 600, powerPreference: 'high-performance' })
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, w > 600 ? 2 : 1.5))
                 renderer.setSize(w, h)
                 // Enable hardware acceleration
                 renderer.domElement.style.transform = 'translateZ(0)'
