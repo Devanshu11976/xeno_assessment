@@ -6,38 +6,18 @@ import os
 import sys
 import time
 import threading
-from redis import Redis
 from rq import Worker, Queue
 from app.config.settings import settings
-
-# TCP keepalive constants
-TCP_KEEPIDLE = 0x4  # Seconds before sending first keepalive
-TCP_KEEPINTVL = 0x5  # Seconds between keepalive probes
-TCP_KEEPCNT = 0x6    # Number of failed probes before dropping
+from app.utils.redis_manager import redis_manager, redis_health_check
 
 def main():
     """Start RQ worker to process background tasks"""
-    # Create Redis connection with reconnection logic
+    # Get Redis connection from centralized manager
     max_retries = 5
     redis_conn = None
     for attempt in range(max_retries):
         try:
-            redis_conn = Redis.from_url(
-                settings.REDIS_URL,
-                socket_keepalive=True,
-                socket_keepalive_options={
-                    TCP_KEEPIDLE: 10,
-                    TCP_KEEPINTVL: 5,
-                    TCP_KEEPCNT: 3
-                },
-                socket_timeout=60,
-                socket_connect_timeout=30,
-                health_check_interval=15,
-                retry_on_timeout=True,
-                decode_responses=False
-            )
-            # Test connection
-            redis_conn.ping()
+            redis_conn = redis_manager.get_connection()
             print(f"Redis connection established on attempt {attempt + 1}")
             break
         except Exception as exc:
@@ -61,8 +41,9 @@ def main():
         """Periodically check Redis connection and restart worker if lost"""
         while not stop_event.is_set():
             try:
-                time.sleep(30)  # Check every 30 seconds
-                redis_conn.ping()
+                time.sleep(20)  # Check every 20 seconds (reduced from 30)
+                if not redis_health_check():
+                    raise ConnectionError("Redis health check failed")
             except Exception as exc:
                 print(f"Heartbeat: Redis connection lost: {exc}")
                 print("Heartbeat: Triggering worker restart...")

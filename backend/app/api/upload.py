@@ -12,13 +12,9 @@ from litestar.exceptions import HTTPException
 from litestar.response import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from redis import Redis
 from rq import Queue
 
-# TCP keepalive constants
-TCP_KEEPIDLE = 0x4  # Seconds before sending first keepalive
-TCP_KEEPINTVL = 0x5  # Seconds between keepalive probes
-TCP_KEEPCNT = 0x6    # Number of failed probes before dropping
+from app.utils.redis_manager import redis_manager
 
 from app.schemas.jobs import (
     UploadResponse,
@@ -193,26 +189,11 @@ class UploadController(Controller):
             logger.warning(f"Failed to cleanup temp file {file_path}: {exc}")
 
         try:
-            # Create Redis connection with reconnection logic
+            # Create Redis connection using centralized manager
             max_retries = 3
             for attempt in range(max_retries):
                 try:
-                    redis_conn = Redis.from_url(
-                        settings.REDIS_URL,
-                        socket_keepalive=True,
-                        socket_keepalive_options={
-                            TCP_KEEPIDLE: 10,
-                            TCP_KEEPINTVL: 5,
-                            TCP_KEEPCNT: 3
-                        },
-                        socket_timeout=30,
-                        socket_connect_timeout=30,
-                        health_check_interval=15,
-                        retry_on_timeout=True,
-                        decode_responses=False
-                    )
-                    # Test connection
-                    redis_conn.ping()
+                    redis_conn = redis_manager.get_connection()
                     q = Queue("default", connection=redis_conn)
                     from rq import Retry
                     q.enqueue(

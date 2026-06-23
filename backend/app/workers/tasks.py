@@ -2,14 +2,9 @@ import time
 import logging
 import asyncio
 import traceback
-from redis import Redis
 from rq import Queue, Worker, Retry
 from app.config.settings import settings
-
-# TCP keepalive constants
-TCP_KEEPIDLE = 0x4  # Seconds before sending first keepalive
-TCP_KEEPINTVL = 0x5  # Seconds between keepalive probes
-TCP_KEEPCNT = 0x6    # Number of failed probes before dropping
+from app.utils.redis_manager import redis_manager, redis_health_check
 
 logger = logging.getLogger("xeno.worker")
 
@@ -236,27 +231,12 @@ async def _mark_failed(job_id: str, error_msg: str) -> None:
 
 
 if __name__ == "__main__":
-    # Create Redis connection with reconnection logic
+    # Get Redis connection from centralized manager
     max_retries = 5
     redis_conn = None
     for attempt in range(max_retries):
         try:
-            redis_conn = Redis.from_url(
-                settings.REDIS_URL,
-                socket_keepalive=True,
-                socket_keepalive_options={
-                    TCP_KEEPIDLE: 10,
-                    TCP_KEEPINTVL: 5,
-                    TCP_KEEPCNT: 3
-                },
-                socket_timeout=60,
-                socket_connect_timeout=30,
-                health_check_interval=15,
-                retry_on_timeout=True,
-                decode_responses=False
-            )
-            # Test connection
-            redis_conn.ping()
+            redis_conn = redis_manager.get_connection()
             print(f"Redis connection established on attempt {attempt + 1}")
             break
         except Exception as exc:
