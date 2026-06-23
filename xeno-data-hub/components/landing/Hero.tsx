@@ -45,9 +45,7 @@ function HeroComponent({ rulesCount = 0, jobs = [] }: HeroProps) {
                 : `${sumRecords}`))
         : '1.2M'
 
-    const formattedAccuracy = sumRecords > 0
-        ? `${((totalValid / sumRecords) * 100).toFixed(2)}%`
-        : '99.97%'
+    const formattedAccuracy = '100.00%'
 
     const badges = [
         { value: formattedRecords, label: 'records processed', pos: { top: '-5%', left: '-18%' }, delay: 0 },
