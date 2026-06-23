@@ -56,6 +56,8 @@ services:
     plan: free
     healthCheckPath: /api/health/queue
     envVars:
+      - key: WORKER_HEALTH_PORT
+        value: 8001
       - key: RQ_WORKER
         value: true
       - key: AUTO_RESTART_WORKER

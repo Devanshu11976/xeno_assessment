@@ -3,6 +3,8 @@
 ## Problem
 Server and worker going down due to inactivity, causing jobs to get stuck in queue waiting for worker or stuck in Redis.
 
+**Specific Issue:** Worker shuts down after periods of inactivity (e.g., 15 minutes on Render free tier), preventing job processing.
+
 ## Solution
 Implemented multi-layered auto-recovery mechanisms to detect and automatically restart services when they fail or become unresponsive.
 
@@ -56,18 +58,31 @@ worker: python start_worker.py
 }
 ```
 
-### 3. Worker Heartbeat with Stuck Job Detection
+### 3. Worker Heartbeat with Keep-Alive
 **File:** `backend/start_worker.py`
 
-**Enhanced:** Heartbeat function now monitors both Redis connection and stuck jobs
+**Enhanced:** Heartbeat function now includes keep-alive mechanism to prevent platform shutdown
 
 **Features:**
 - Checks Redis connection every 20 seconds
+- Performs lightweight Redis operations (ping, queue count) every cycle
 - Monitors started job registry for jobs running > 30 minutes
 - Automatically triggers worker restart if:
   - Redis connection fails
   - Stuck jobs detected
 - Logs detailed information about detected issues
+
+**Keep-Alive Mechanism:**
+```python
+# Keep-alive: Perform a lightweight Redis operation every cycle
+# This prevents platform shutdown due to inactivity
+redis_conn = redis_manager.get_connection()
+redis_conn.ping()
+queue = Queue("default", connection=redis_conn)
+queue.count  # Lightweight read operation
+```
+
+**Purpose:** Regular activity prevents deployment platforms (Render, Railway) from spinning down the worker due to inactivity.
 
 **Logic:**
 ```python
@@ -88,7 +103,33 @@ def heartbeat():
             os._exit(1)
 ```
 
-### 4. Standalone Worker Health Check Script
+### 4. Worker HTTP Server for Health Checks
+**File:** `backend/start_worker.py`
+
+**Added:** Minimal HTTP server for health checks to prevent platform spin-down
+
+**Features:**
+- Runs on port 8001 (configurable via `WORKER_HEALTH_PORT`)
+- Handles `/api/health` endpoint for basic health
+- Handles `/api/health/queue` endpoint for queue monitoring
+- Lightweight, daemon thread - doesn't interfere with worker
+- Suppresses HTTP server logging to reduce noise
+
+**Endpoints:**
+- `GET /api/health` - Returns Redis connection status
+- `GET /api/health/queue` - Returns queue statistics and stuck job count
+
+**Purpose:** Provides HTTP endpoint for platform health checks, preventing worker spin-down on free tiers (Render: 15 min inactivity timeout).
+
+**Configuration:**
+```python
+health_check_port = int(os.getenv("WORKER_HEALTH_PORT", "8001"))
+http_server = HTTPServer(('0.0.0.0', health_check_port), HealthCheckHandler)
+http_thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+http_thread.start()
+```
+
+### 5. Standalone Worker Health Check Script
 **File:** `backend/worker_health_check.py` (NEW)
 
 **Purpose:** Standalone health check for worker deployments without web server
@@ -106,7 +147,7 @@ python worker_health_check.py
 # Exit code 1 = unhealthy
 ```
 
-### 5. Docker Health Check
+### 6. Docker Health Check
 **File:** `backend/Dockerfile`
 
 **Added:** HEALTHCHECK instruction
@@ -120,12 +161,12 @@ python worker_health_check.py
 **Logic:**
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
-    CMD sh -c "if [ \"$RQ_WORKER\" = \"true\" ]; then python worker_health_check.py; else curl -f http://localhost:8000/api/health || exit 1; fi"
+    CMD sh -c "if [ \"$RQ_WORKER\" = \"true\" ]; then curl -f http://localhost:8001/api/health/queue || exit 1; else curl -f http://localhost:8000/api/health || exit 1; fi"
 ```
 
-**Benefit:** Docker automatically restarts container if health check fails 3 times in a row.
+**Benefit:** Docker automatically restarts container if health check fails 3 times in a row. Worker uses HTTP server on port 8001 for health checks.
 
-### 6. Render Worker Health Check
+### 7. Render Worker Health Check
 **File:** `render.yaml`
 
 **Added:** Health check path to worker service
@@ -135,11 +176,14 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
 - type: worker
   name: xeno-worker
   healthCheckPath: /api/health/queue
+  envVars:
+    - key: WORKER_HEALTH_PORT
+      value: 8001
 ```
 
-**Note:** This requires the worker to run a web server. Since workers don't currently run a web server, the Docker HEALTHCHECK is more appropriate for worker deployments.
+**Note:** Worker now runs HTTP server on port 8001 for health checks, preventing Render free tier spin-down (15 min inactivity timeout).
 
-### 7. Railway Restart Policy
+### 8. Railway Restart Policy
 **File:** `backend/railway.toml`
 
 **Already Configured:**
@@ -299,10 +343,10 @@ echo $?  # Should be 0 if healthy, 1 if unhealthy
 
 1. `backend/Procfile` - Updated worker command
 2. `backend/main.py` - Added health check endpoints
-3. `backend/start_worker.py` - Enhanced heartbeat with stuck job detection
+3. `backend/start_worker.py` - Enhanced heartbeat with keep-alive, added HTTP server
 4. `backend/worker_health_check.py` - NEW standalone health check script
-5. `backend/Dockerfile` - Added HEALTHCHECK instruction
-6. `render.yaml` - Added health check path to worker
+5. `backend/Dockerfile` - Added HEALTHCHECK instruction, exposed port 8001
+6. `render.yaml` - Added health check path and WORKER_HEALTH_PORT
 
 ## Benefits
 
