@@ -211,7 +211,7 @@ New countries and rule sets plug in without touching the core engine.
 
 <div align="center">
 
-### Built by **Devanshu Sharma**
+### Built by **Devanshu Sharma & Sanmati Jain**
 BE Computer Science Engineering (AI & ML) · Chandigarh University
 
 *Originally built for the Xeno Implementation Internship Assignment.*
