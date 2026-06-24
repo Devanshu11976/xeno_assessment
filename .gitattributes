@@ -1,0 +1,6 @@
+*.ts linguist-vendored
+*.tsx linguist-vendored
+xeno-data-hub/** linguist-vendored
+
+*.py linguist-detectable=true
+*.py linguist-language=Python
