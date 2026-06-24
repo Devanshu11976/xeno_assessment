@@ -49,18 +49,18 @@ backend/alembic/versions/__pycache__/
 # ── Node ─────────────────────────────────────────────────────────────
 /node_modules/
 
-# ── Frontend (xeno-data-hub) ─────────────────────────────────────────
-xeno-data-hub/node_modules/
-xeno-data-hub/.next/
-xeno-data-hub/out/
-xeno-data-hub/build/
-xeno-data-hub/.env*
-!xeno-data-hub/.env.example
-xeno-data-hub/*.tsbuildinfo
-xeno-data-hub/next-env.d.ts
-xeno-data-hub/.vercel
-xeno-data-hub/coverage/
-xeno-data-hub/turbo/
+# ── Frontend (stratos-data-hub) ─────────────────────────────────────────
+stratos-data-hub/node_modules/
+stratos-data-hub/.next/
+stratos-data-hub/out/
+stratos-data-hub/build/
+stratos-data-hub/.env*
+!stratos-data-hub/.env.example
+stratos-data-hub/*.tsbuildinfo
+stratos-data-hub/next-env.d.ts
+stratos-data-hub/.vercel
+stratos-data-hub/coverage/
+stratos-data-hub/turbo/
 
 # Logs and temporary files
 logs/

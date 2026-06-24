@@ -101,7 +101,7 @@ export default function CTA() {
 
                         {/* Talk to the team → mailto */}
                         <motion.a
-                            href={`mailto:${DEMO_EMAIL}?subject=Xeno%20Data%20Intelligence%20Hub%20Inquiry`}
+                            href={`mailto:${DEMO_EMAIL}?subject=Stratos%20Data%20Intelligence%20Hub%20Inquiry`}
                             aria-label="Talk to the team — send us an email"
                             whileHover={{ y: -2 }}
                             style={{

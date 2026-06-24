@@ -1,10 +1,10 @@
 {
-  "name": "xeno",
+  "name": "stratos",
   "private": true,
   "scripts": {
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && docker compose up --build",
-    "dev:frontend": "cd xeno-data-hub && npm run dev"
+    "dev:frontend": "cd stratos-data-hub && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

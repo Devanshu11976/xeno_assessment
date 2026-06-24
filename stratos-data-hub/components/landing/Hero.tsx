@@ -172,7 +172,7 @@ function HeroComponent({ rulesCount = 0, jobs = [] }: HeroProps) {
                             lineHeight: 1.6,
                         }}
                     >
-                        Xeno checks every order, product, and payment line by line, resolves
+                        Stratos checks every order, product, and payment line by line, resolves
                         phone and date formats by country, and turns the result into
                         AI-generated insights your team can act on immediately.
                     </p>

@@ -6,7 +6,7 @@ from typing import Optional
 from supabase import create_client, Client
 from app.config.settings import settings
 
-logger = logging.getLogger("xeno.storage")
+logger = logging.getLogger("stratos.storage")
 
 
 class StorageService:

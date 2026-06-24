@@ -4,7 +4,7 @@
 // workspace page so the same UI components render without modification.
 
 export const DEMO_JOB = {
-  job_id: 'DEMO-XENO-2024',
+  job_id: 'DEMO-STRATOS-2024',
   status: 'completed' as const,
   total_records: 14_872,
   valid_records: 13_104,

@@ -174,7 +174,7 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
 **Change:**
 ```yaml
 - type: worker
-  name: xeno-worker
+  name: stratos-worker
   healthCheckPath: /api/health/queue
   envVars:
     - key: WORKER_HEALTH_PORT

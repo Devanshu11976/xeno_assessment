@@ -17,7 +17,7 @@ class Settings:
     db_password: str = field(default_factory=lambda: os.getenv("DB_PASSWORD", ""))
     db_host: str = field(default_factory=lambda: os.getenv("DB_HOST", "localhost"))
     db_port: int = field(default_factory=lambda: int(os.getenv("DB_PORT", "5432")))
-    db_name: str = field(default_factory=lambda: os.getenv("DB_NAME", "xeno_8tb8"))
+    db_name: str = field(default_factory=lambda: os.getenv("DB_NAME", "stratos_8tb8"))
 
     # SQLAlchemy pool tuning
     db_echo: bool = field(default_factory=lambda: os.getenv("DB_ECHO", "false").lower() == "true")
@@ -34,7 +34,7 @@ class Settings:
     # Supabase Storage
     supabase_url: str = field(default_factory=lambda: os.getenv("SUPABASE_URL", ""))
     supabase_service_key: str = field(default_factory=lambda: os.getenv("SUPABASE_SERVICE_KEY", ""))
-    supabase_bucket_name: str = field(default_factory=lambda: os.getenv("SUPABASE_BUCKET_NAME", "xeno-uploads"))
+    supabase_bucket_name: str = field(default_factory=lambda: os.getenv("SUPABASE_BUCKET_NAME", "stratos-uploads"))
 
     # Storage (local temp directories)
     upload_dir: str = field(default_factory=lambda: os.getenv("UPLOAD_DIR", "./uploads"))

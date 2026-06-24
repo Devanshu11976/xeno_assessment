@@ -28,7 +28,7 @@ DB_URL: URL = URL.create(
     password=os.environ.get("DB_PASSWORD", "Dev@11976"),
     host=os.environ.get("DB_HOST", "db"),
     port=int(os.environ.get("DB_PORT", "5432")),
-    database=os.environ.get("DB_NAME", "xeno"),
+    database=os.environ.get("DB_NAME", "stratos"),
 )
 
 

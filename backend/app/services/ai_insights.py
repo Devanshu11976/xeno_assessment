@@ -6,7 +6,7 @@ from typing import Dict, Any
 from app.config.settings import settings
 from app.services.storage import storage_service
 
-logger = logging.getLogger("xeno.ai_insights")
+logger = logging.getLogger("stratos.ai_insights")
 
 
 class AIInsightsGenerator:

@@ -1,4 +1,4 @@
-# Railway configuration for Xeno backend services
+# Railway configuration for Stratos backend services
 # This file configures how Railway builds and deploys the application
 
 [build]

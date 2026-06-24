@@ -1,12 +1,12 @@
 databases:
-  - name: xeno-db
-    databaseName: xeno
-    user: xeno_user
+  - name: stratos-db
+    databaseName: stratos
+    user: stratos_user
     plan: free
 
 services:
   - type: web
-    name: xeno-api
+    name: stratos-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -19,23 +19,23 @@ services:
         value: false
       - key: DB_USER
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: password
       - key: DB_HOST
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: host
       - key: DB_PORT
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: port
       - key: DB_NAME
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: database
       - key: REDIS_URL
         sync: false
@@ -49,7 +49,7 @@ services:
         value: ./outputs
 
   - type: worker
-    name: xeno-worker
+    name: stratos-worker
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -66,23 +66,23 @@ services:
         value: production
       - key: DB_USER
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: password
       - key: DB_HOST
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: host
       - key: DB_PORT
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: port
       - key: DB_NAME
         fromDatabase:
-          name: xeno-db
+          name: stratos-db
           property: database
       - key: REDIS_URL
         sync: false
@@ -96,12 +96,12 @@ services:
         value: ./outputs
 
   - type: web
-    name: xeno-frontend
+    name: stratos-frontend
     runtime: node
     buildCommand: npm run build
     startCommand: npm start
     plan: free
-    rootDir: ./xeno-data-hub
+    rootDir: ./stratos-data-hub
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://xeno-api.onrender.com
+        value: https://stratos-api.onrender.com

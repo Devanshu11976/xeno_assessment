@@ -48,7 +48,7 @@ export default function Navbar() {
                         flexShrink: 0,
                     }}
                 />
-                XENO{' '}
+                STRATOS{' '}
                 <span
                     className="logo-subtext"
                     style={{ color: 'var(--mist)', fontWeight: 400 }}
@@ -117,7 +117,7 @@ export default function Navbar() {
 
                 {/* Book a demo → mailto */}
                 <a
-                    href={`mailto:${DEMO_EMAIL}?subject=Xeno%20Data%20Intelligence%20Hub%20Demo%20Request`}
+                    href={`mailto:${DEMO_EMAIL}?subject=Stratos%20Data%20Intelligence%20Hub%20Demo%20Request`}
                     aria-label="Book a demo — send us an email"
                     style={{
                         fontSize: 13.5,

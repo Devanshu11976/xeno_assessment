@@ -12,7 +12,7 @@ TCP_KEEPIDLE = 0x4  # Seconds before sending first keepalive
 TCP_KEEPINTVL = 0x5  # Seconds between keepalive probes
 TCP_KEEPCNT = 0x6    # Number of failed probes before dropping
 
-logger = logging.getLogger("xeno.redis")
+logger = logging.getLogger("stratos.redis")
 
 
 class RedisConnectionManager:

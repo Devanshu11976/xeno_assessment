@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Xeno Data Intelligence Hub",
+  title: "Stratos Data Intelligence Hub",
   description: "Streaming transaction validation at scale.",
 };
 

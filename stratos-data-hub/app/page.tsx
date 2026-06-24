@@ -517,13 +517,13 @@ function Footer() {
             color: 'var(--mist-dim)',
           }}
         >
-          © 2026 Sanmati Jain · Xeno Data Intelligence Hub
+          © 2026 Sanmati Jain · Stratos Data Intelligence Hub
         </div>
         <div style={{ display: 'flex', gap: 28, fontSize: 13.5, color: 'var(--mist-dim)' }}>
           {['Privacy', 'Terms', 'Status', 'Docs'].map((link) => (
             <a
               key={link}
-              href={link === 'Docs' ? '/workspace?demo=true' : `mailto:sanmatijain2204@gmail.com?subject=Xeno%20${link}`}
+              href={link === 'Docs' ? '/workspace?demo=true' : `mailto:sanmatijain2204@gmail.com?subject=Stratos%20${link}`}
               style={{ transition: 'color 0.2s' }}
               onMouseEnter={(e) =>
                 ((e.target as HTMLElement).style.color = 'var(--mist)')

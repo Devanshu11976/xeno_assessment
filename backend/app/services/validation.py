@@ -18,7 +18,7 @@ from app.validators.field_validators import (
     CountryValidator, QuantityValidator, AmountValidator
 )
 
-logger = logging.getLogger("xeno.validation")
+logger = logging.getLogger("stratos.validation")
 
 CHUNK_SIZE = 1000
 

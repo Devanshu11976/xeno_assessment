@@ -6,7 +6,7 @@ from rq import Queue, Worker, Retry
 from app.config.settings import settings
 from app.utils.redis_manager import redis_manager, redis_health_check
 
-logger = logging.getLogger("xeno.worker")
+logger = logging.getLogger("stratos.worker")
 
 # Retry up to 3 times with exponential back-off: 60s, 120s, 240s
 RETRY_POLICY = Retry(max=3, interval=[60, 120, 240])

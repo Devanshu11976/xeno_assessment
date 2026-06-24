@@ -4,7 +4,7 @@ import traceback
 from groq import Groq
 from app.config.settings import settings
 
-logger = logging.getLogger("xeno.ai")
+logger = logging.getLogger("stratos.ai")
 
 # Model to use — llama-3.3-70b-versatile is Groq's best general-purpose model
 GROQ_MODEL = "llama-3.3-70b-versatile"

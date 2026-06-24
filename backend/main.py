@@ -81,6 +81,24 @@ async def queue_health_check() -> dict:
         }
 
 
+@get("/api/ping")
+async def ping_endpoint() -> dict[str, str]:
+    """
+    Simple ping endpoint to prevent worker inactivity shutdown.
+    Can be called by external cron jobs or monitoring services every 10 minutes
+    to keep the worker active on free-tier platforms (Render, Railway).
+    
+    This endpoint performs a lightweight Redis operation to generate activity.
+    """
+    try:
+        from app.utils.redis_manager import redis_manager
+        redis_conn = redis_manager.get_connection()
+        redis_conn.ping()  # Lightweight operation to generate activity
+        return {"status": "pong", "message": "Keep-alive successful"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @get("/api/stats")
 async def get_stats(session: AsyncSession) -> dict:
     """Live platform stats for the Hero section badges."""
@@ -272,6 +290,8 @@ cors_config = CORSConfig(
 app = Litestar(
     route_handlers=[
         health_check,
+        queue_health_check,
+        ping_endpoint,
         get_stats,
         UploadController,
         RulesController,
@@ -281,7 +301,7 @@ app = Litestar(
     on_shutdown=[close_db_connections],
     on_startup=[on_startup],
     openapi_config=OpenAPIConfig(
-        title="Xeno Data Intelligence Hub API",
+        title="Stratos Data Intelligence Hub API",
         version="1.0.0",
         openapi_controller=SpecController,
     ),

@@ -59,7 +59,7 @@ const STAGES = [
   {
     num: '01',
     title: 'Ingest',
-    desc: 'Drop in a CSV or Excel file, a few rows or a few million. Xeno streams it chunk by chunk — nothing loads fully into memory.',
+    desc: 'Drop in a CSV or Excel file, a few rows or a few million. Stratos streams it chunk by chunk — nothing loads fully into memory.',
     color: 'var(--ingest)',
     visual: (
       <svg viewBox="0 0 100 60" fill="none" style={{ width: '100%', height: '100%' }}>

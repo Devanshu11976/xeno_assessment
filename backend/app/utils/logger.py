@@ -3,7 +3,7 @@ import sys
 import traceback
 from app.config.settings import settings
 
-def setup_logger(name: str = "xeno") -> logging.Logger:
+def setup_logger(name: str = "stratos") -> logging.Logger:
     """Configures structured console logging formats for production use."""
     logger = logging.getLogger(name)
     if not logger.handlers:
